@@ -1,0 +1,8 @@
+import React, { useMemo, useState } from 'react';
+import { Activity, AlertTriangle, ArrowDownRight, ArrowUpRight, Bell, ChevronRight, CircleDot, FilePlus2, FileText, Filter, FolderKanban, Globe2, MapPinned, MoreHorizontal, Search, ShieldCheck, Sparkles, Target, TrendingUp } from 'lucide-react';
+import type { NationalStats, ParcelRecord, ProjectData, ViewTab } from '../../types';
+import { Metric, MiniMap, ProjectRow, RiskPill, SignalBar, riskTone } from '../ui';
+
+export function Registry({ parcels, onNew }: { parcels: ParcelRecord[]; onNew: () => void }) {
+  return <div className="page-stack"><section className="page-heading"><div><div className="eyebrow">CADASTRAL RECORDS · {parcels.length} recent entries</div><h1>Parcel registry</h1><p>Keep the legal ground truth close to the risk signal.</p></div><button className="button primary" onClick={onNew}><FilePlus2 size={16} /> Register parcel</button></section><div className="panel registry-panel"><div className="registry-note"><ShieldCheck size={19} /><span><strong>Verified chain of custody.</strong> Every parcel record is linked to a project file and last synced by an assigned operator.</span></div><div className="registry-table-head"><span>Parcel ID</span><span>Owner / authority</span><span>Cadastral reference</span><span>State</span><span /></div>{parcels.map((parcel) => <div className="registry-row" key={parcel.id}><div><strong>{parcel.id}</strong><span>{parcel.deedRef}</span></div><span>{parcel.owner}</span><span className="mono">{parcel.cadastralRef}</span><span className={`status-text ${parcel.status.toLowerCase()}`}><CircleDot size={13} /> {parcel.status}</span><ChevronRight size={16} /></div>)}</div></div>;
+}
