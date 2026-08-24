@@ -1,0 +1,124 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    background-color: #f5faff;
+    color: #001e2d;
+    font-family: 'Bodoni Moda', serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Barlow Condensed', sans-serif;
+  }
+}
+
+.font-display {
+  font-family: 'Barlow Condensed', sans-serif;
+}
+
+.font-headline {
+  font-family: 'Barlow Condensed', sans-serif;
+}
+
+.font-body {
+  font-family: 'Bodoni Moda', serif;
+}
+
+.font-label {
+  font-family: 'Newsreader', serif;
+}
+
+.font-data-mono {
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: 0.02em;
+}
+
+.seal-stamp {
+  border-radius: 9999px !important;
+  border-style: solid;
+  border-width: 2px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.seal-stamp-critical {
+  border-color: #ba1a1a;
+  color: #ba1a1a;
+  background-color: #ffdad6;
+}
+
+.seal-stamp-warning {
+  border-color: #6a5c4a;
+  color: #6a5c4a;
+  background-color: #f3e0c8;
+}
+
+.seal-stamp-low {
+  border-color: #36675c;
+  color: #1c4f45;
+  background-color: #b9eddf;
+}
+
+.hairline-border {
+  border-color: #d7c2bd;
+  border-width: 1px;
+}
+
+.hairline-b {
+  border-bottom: 1px solid #d7c2bd;
+}
+
+.hairline-t {
+  border-top: 1px solid #d7c2bd;
+}
+
+.hairline-l {
+  border-left: 1px solid #d7c2bd;
+}
+
+.hairline-r {
+  border-right: 1px solid #d7c2bd;
+}
+
+/* Form input styles matching official design */
+.form-input-blank {
+  background-color: #ffffff;
+  border: 1px solid #85736f;
+  border-radius: 9999px;
+  padding: 8px 16px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: #001e2d;
+  width: 100%;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-input-blank:focus {
+  outline: none;
+  border-color: #874f43;
+  box-shadow: 0 0 0 2px rgba(135, 79, 67, 0.2);
+}
+
+.form-blank-line {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #85736f;
+  border-radius: 0;
+  padding: 4px 0;
+  font-family: 'Bodoni Moda', serif;
+  font-size: 14px;
+  color: #001e2d;
+}
+
+.form-blank-line:focus {
+  outline: none;
+  border-bottom-color: #001e2d;
+}
+
+/* Material symbols size helpers */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}

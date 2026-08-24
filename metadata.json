@@ -1,0 +1,6 @@
+{
+  "name": "Zameen Vivaad AI",
+  "description": "Land Acquisition, Legal Dispute Resolution & Risk Forecast Engine for Government ADM Registries.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
