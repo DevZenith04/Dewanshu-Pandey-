@@ -4,133 +4,55 @@ interface InitialSplashProps {
   onComplete: () => void;
 }
 
+type IntroPhase = 'line' | 'wordmark' | 'tagline' | 'fadeout';
+
 export const InitialSplash: React.FC<InitialSplashProps> = ({ onComplete }) => {
-  const [phase, setPhase] = useState<'line' | 'text' | 'tagline' | 'fadeout'>('line');
+  const [phase, setPhase] = useState<IntroPhase>('line');
 
   useEffect(() => {
-    // Check prefers-reduced-motion or sessionStorage
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const hasSeenSplash = sessionStorage.getItem('zv_splash_seen');
+    const hasSeenIntro = sessionStorage.getItem('zv_splash_seen') === 'true';
 
-    if (prefersReducedMotion || hasSeenSplash === 'true') {
+    if (prefersReducedMotion || hasSeenIntro) {
+      sessionStorage.setItem('zv_splash_seen', 'true');
       onComplete();
-      return;
+      return undefined;
     }
 
-    // Step 1: Draw hairline boundary line (0ms to 450ms)
-    const t1 = setTimeout(() => {
-      setPhase('text');
-    }, 450);
-
-    // Step 2: Fade & slide wordmark up into place (450ms to 750ms)
-    const t2 = setTimeout(() => {
-      setPhase('tagline');
-    }, 750);
-
-    // Step 3: Fade tagline in (750ms to 1250ms)
-    const t3 = setTimeout(() => {
-      setPhase('fadeout');
-    }, 1250);
-
-    // Step 4: Fade overlay out and complete (1250ms to 1500ms)
-    const t4 = setTimeout(() => {
+    const wordmarkTimer = window.setTimeout(() => setPhase('wordmark'), 500);
+    const taglineTimer = window.setTimeout(() => setPhase('tagline'), 800);
+    const fadeoutTimer = window.setTimeout(() => setPhase('fadeout'), 1160);
+    const completeTimer = window.setTimeout(() => {
       sessionStorage.setItem('zv_splash_seen', 'true');
       onComplete();
     }, 1500);
 
     return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-      clearTimeout(t4);
+      window.clearTimeout(wordmarkTimer);
+      window.clearTimeout(taglineTimer);
+      window.clearTimeout(fadeoutTimer);
+      window.clearTimeout(completeTimer);
     };
   }, [onComplete]);
 
   return (
-    <div
-      className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#F6F4EF] text-[#001e2d] transition-opacity duration-300 font-display select-none overflow-hidden ${
-        phase === 'fadeout' ? 'opacity-0 pointer-events-none' : 'opacity-100'
-      }`}
-    >
-      {/* Faint Topographic Contour Lines Pattern Background */}
-      <svg
-        className={`absolute inset-0 w-full h-full pointer-events-none transition-opacity duration-700 ${
-          phase === 'fadeout' ? 'opacity-0' : 'opacity-15'
-        }`}
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 1000 600"
-        preserveAspectRatio="xMidYMid slice"
-      >
-        <path
-          d="M -100,100 C 200,50 400,250 700,100 C 900,0 1100,200 1200,300"
-          fill="none"
-          stroke="#874f43"
-          strokeWidth="1"
-        />
-        <path
-          d="M -100,200 C 150,150 350,350 650,200 C 850,100 1050,300 1200,400"
-          fill="none"
-          stroke="#874f43"
-          strokeWidth="1"
-        />
-        <path
-          d="M -100,300 C 100,250 300,450 600,300 C 800,200 1000,400 1200,500"
-          fill="none"
-          stroke="#874f43"
-          strokeWidth="1"
-        />
-        <path
-          d="M -100,400 C 50,350 250,550 550,400 C 750,300 950,500 1200,600"
-          fill="none"
-          stroke="#874f43"
-          strokeWidth="1"
-        />
-        <circle cx="500" cy="300" r="120" fill="none" stroke="#874f43" strokeWidth="0.75" strokeDasharray="3,3" />
-        <circle cx="500" cy="300" r="220" fill="none" stroke="#874f43" strokeWidth="0.5" strokeDasharray="4,4" />
+    <div className={`intro-overlay intro-${phase}`} aria-label="Loading Zameen Vivaad AI">
+      <svg className="intro-contours" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <path d="M-80 170C170 35 275 255 528 132S930 14 1116 168s274 122 450 30" />
+        <path d="M-100 270C125 155 286 352 536 237s402-86 603 35 238 145 391 44" />
+        <path d="M-85 385C150 253 313 470 560 345s392-77 594 44 226 142 374 58" />
+        <path d="M-90 505C120 377 320 588 565 460s409-73 606 55 211 140 358 65" />
+        <path d="M-80 635C140 500 315 720 587 582s389-51 585 67 234 143 377 58" />
+        <path d="M-65 770C138 624 325 846 598 702s399-35 594 68 225 134 349 67" />
+        <ellipse cx="776" cy="420" rx="216" ry="142" />
+        <ellipse cx="776" cy="420" rx="310" ry="204" />
+        <ellipse cx="776" cy="420" rx="418" ry="282" />
       </svg>
-
-      {/* Center Container */}
-      <div className="relative z-10 w-full max-w-xl px-8 text-center space-y-4">
-        {/* Top Emblem / Reference */}
-        <div className="text-[10px] font-data-mono font-bold uppercase tracking-widest text-[#874f43] opacity-80">
-          ADM CADASTRAL REGISTRY • V2.04
-        </div>
-
-        {/* Wordmark "Zameen Vivaad AI" */}
-        <div className="overflow-hidden py-1">
-          <h1
-            className={`font-display font-bold text-4xl sm:text-5xl uppercase tracking-wider text-[#001e2d] transition-all duration-300 ease-out ${
-              phase === 'line'
-                ? 'opacity-0 translate-y-3'
-                : 'opacity-100 translate-y-0'
-            }`}
-          >
-            Zameen Vivaad AI
-          </h1>
-        </div>
-
-        {/* Single 1px Hairline Boundary Line drawing left to right */}
-        <div className="w-full h-[1px] bg-[#d7c2bd] relative overflow-hidden my-2">
-          <div
-            className="absolute top-0 left-0 bottom-0 bg-[#874f43] transition-all duration-500 ease-out"
-            style={{
-              width: phase === 'line' ? '0%' : '100%',
-            }}
-          ></div>
-        </div>
-
-        {/* Tagline */}
-        <div className="overflow-hidden">
-          <p
-            className={`font-label text-sm sm:text-base italic text-[#85736f] transition-all duration-300 ease-out ${
-              phase === 'tagline' || phase === 'fadeout'
-                ? 'opacity-100 translate-y-0'
-                : 'opacity-0 translate-y-2'
-            }`}
-          >
-            Land Acquisition, Legal Dispute Resolution &amp; Risk Forecast Engine
-          </p>
-        </div>
+      <div className="intro-boundary" aria-hidden="true"><span /></div>
+      <div className="intro-lockup">
+        <div className="intro-kicker">FIELD INTELLIGENCE · LAND ACQUISITION</div>
+        <h1 className="intro-wordmark">Zameen Vivaad AI</h1>
+        <p className="intro-tagline">See the delay before it becomes the story.</p>
       </div>
     </div>
   );
