@@ -21,3 +21,11 @@ The static export is not a second implementation. It is generated from the same 
 ## Optimization choices
 
 The largest optimization is structural: the application shell is small enough to understand at a glance, screen modules can be changed independently, and shared UI is imported once and tree-shaken by Vite. Search filtering is memoized in Project desk, the intro animation is session-gated, and the build remains static-friendly with no runtime API dependency.
+
+## Polish audit checkpoint
+
+The Overview now has a stronger editorial hierarchy with a morning brief strip, three color-coded movement signals, a richer geographic pulse, and a confidence note below the bottleneck chart. The Project desk still preserves its table-to-snapshot workflow after the visual update, including selected-file scoring, delay likelihood, and explainable drivers.
+
+## Glassmorphism audit checkpoint
+
+The glass treatment was checked on Overview and Project desk. Cards now separate cleanly from the atmospheric background through translucent white layers, backdrop blur, soft inset highlights, and deeper ambient shadows. Project rows, filter controls, primary actions, and the selected-file snapshot use the same rounded language, while the existing typography and risk colors remain readable.
