@@ -135,21 +135,13 @@ function reportModal() {
   return `<div class="vanilla-modal-backdrop" data-action="close-report"><div class="vanilla-modal report-modal" role="dialog" aria-modal="true" onclick="event.stopPropagation()"><div class="vanilla-modal-header"><div><h2>EXECUTIVE REPORT BRIEF</h2><p>National land acquisition overview prepared for review.</p></div><button class="icon-button" data-action="close-report">${icon('close')}</button></div><div class="report-body"><div class="report-seal">${icon('description')}</div><h3>National Land Acquisition Overview</h3><p>Current registry pulse: ${state.stats.totalProjectsActive.toLocaleString()} active projects and ${state.stats.criticalRiskZones} critical exposure zones requiring review.</p><div class="report-list"><span>Highest exposure</span><strong>${esc(state.projects.slice().sort((a, b) => b.riskScore - a.riskScore)[0].title)}</strong><span>Recommended action</span><strong>Open the risk studio and review the compensation queue.</strong></div></div><div class="vanilla-modal-actions"><button class="button secondary" data-action="close-report">Close</button><button class="button primary" data-action="download-report">${icon('download')} Download brief</button></div></div></div>`;
 }
 
-function showIntro() {
-  let splashSeen = false;
-  try {
-    splashSeen = sessionStorage.getItem('zv_splash_seen') === 'true' && sessionStorage.getItem('zv_splash_version') === '3';
-    sessionStorage.setItem('zv_splash_seen', 'true');
-    sessionStorage.setItem('zv_splash_version', '3');
-  } catch (error) {
-    /* Continue with the splash when session storage is unavailable. */
-  }
-  const existingOverlay = document.querySelector('#initial-splash');
-  if (splashSeen) {
-    existingOverlay?.remove();
-    return;
-  }
+let introTimers = [];
 
+function showIntro() {
+  introTimers.forEach((timer) => clearTimeout(timer));
+  introTimers = [];
+
+  const existingOverlay = document.querySelector('#initial-splash');
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const overlay = existingOverlay || document.createElement('div');
   overlay.className = `intro-overlay${reducedMotion ? ' intro-reduced' : ''}`;
@@ -171,16 +163,19 @@ function showIntro() {
   const finish = () => {
     overlay.remove();
     document.body.classList.remove('intro-running', 'intro-content-reveal');
+    introTimers = [];
   };
-  setTimeout(() => overlay.classList.add('intro-contours-in'), 300);
-  setTimeout(() => overlay.classList.add('intro-line'), 700);
-  setTimeout(() => overlay.classList.add('intro-wordmark'), 2000);
-  setTimeout(() => overlay.classList.add('intro-tagline'), 2700);
-  setTimeout(() => {
-    document.body.classList.add('intro-content-reveal');
-    overlay.classList.add('intro-fadeout');
-  }, 3400);
-  setTimeout(finish, 3900);
+  introTimers = [
+    setTimeout(() => overlay.classList.add('intro-contours-in'), 350),
+    setTimeout(() => overlay.classList.add('intro-line'), 850),
+    setTimeout(() => overlay.classList.add('intro-wordmark'), 2250),
+    setTimeout(() => overlay.classList.add('intro-tagline'), 3100),
+    setTimeout(() => {
+      document.body.classList.add('intro-content-reveal');
+      overlay.classList.add('intro-fadeout');
+    }, 4000),
+    setTimeout(finish, 5000),
+  ];
 }
 
 function addProject(form) {
@@ -194,7 +189,7 @@ function addProject(form) {
 function render() { applyTheme(); window.ZameenCharts?.destroyCharts(); app.innerHTML = shell(); bindEvents(); window.ZameenCharts?.renderCharts({ projects: state.projects, theme: state.theme }); const content = app.querySelector('.content'); if (content) { content.classList.remove('view-enter'); requestAnimationFrame(() => content.classList.add('view-enter')); } }
 function applyTheme() { document.documentElement.dataset.theme = state.theme; }
 function bindEvents() {
-  app.querySelectorAll('[data-nav]').forEach((element) => element.addEventListener('click', () => { state.activeTab = element.dataset.nav; state.mobileNavOpen = false; render(); }));
+  app.querySelectorAll('[data-nav]').forEach((element) => element.addEventListener('click', () => { const nextTab = element.dataset.nav; const returningHome = nextTab === 'dashboard'; state.activeTab = nextTab; state.mobileNavOpen = false; render(); if (returningHome) showIntro(); }));
   app.querySelectorAll('[data-project-id]').forEach((element) => element.addEventListener('click', () => { state.selectedProject = state.projects.find((project) => project.id === element.dataset.projectId) || state.selectedProject; if (state.activeTab === 'dashboard') state.activeTab = 'projects'; render(); }));
   app.querySelectorAll('[data-action]').forEach((element) => element.addEventListener('click', () => { const action = element.dataset.action; if (action === 'open-nav') state.mobileNavOpen = true; if (action === 'close-nav') state.mobileNavOpen = false; if (action === 'new-project') state.newEntryOpen = true; if (action === 'close-new-project') state.newEntryOpen = false; if (action === 'report') state.reportOpen = true; if (action === 'close-report') state.reportOpen = false; if (action === 'download-report') window.print(); if (action === 'toggle-theme') { state.theme = state.theme === 'dark' ? 'light' : 'dark'; localStorage.setItem('zv_theme', state.theme); } render(); }));
   app.querySelectorAll('[data-filter]').forEach((element) => element.addEventListener('click', () => { state.projectFilter = element.dataset.filter; render(); }));
@@ -206,3 +201,4 @@ function bindEvents() {
 
 render();
 showIntro();
+window.addEventListener('load', () => render());

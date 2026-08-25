@@ -12,14 +12,14 @@
     <link rel="stylesheet" href="styles.css" />
     <script>
       try {
-        const splashSeen = sessionStorage.getItem('zv_splash_seen') === 'true' && sessionStorage.getItem('zv_splash_version') === '3';
-        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        if (splashSeen || reducedMotion) document.documentElement.classList.add('skip-initial-splash');
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          document.documentElement.classList.add('skip-initial-splash');
+        }
       } catch (error) {
-        /* Keep the first-load experience available when storage is restricted. */
+        /* Keep the splash available when media-query access is restricted. */
       }
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   </head>
   <body>
     <div id="initial-splash" class="intro-overlay" aria-hidden="true">
