@@ -166,14 +166,14 @@ function showIntro() {
     introTimers = [];
   };
   introTimers = [
-    setTimeout(() => overlay.classList.add('intro-contours-in'), 350),
-    setTimeout(() => overlay.classList.add('intro-line'), 850),
-    setTimeout(() => overlay.classList.add('intro-wordmark'), 2250),
-    setTimeout(() => overlay.classList.add('intro-tagline'), 3100),
+    setTimeout(() => overlay.classList.add('intro-contours-in'), 220),
+    setTimeout(() => overlay.classList.add('intro-line'), 520),
+    setTimeout(() => overlay.classList.add('intro-wordmark'), 1650),
+    setTimeout(() => overlay.classList.add('intro-tagline'), 2450),
     setTimeout(() => {
       document.body.classList.add('intro-content-reveal');
       overlay.classList.add('intro-fadeout');
-    }, 4000),
+    }, 4100),
     setTimeout(finish, 5000),
   ];
 }
