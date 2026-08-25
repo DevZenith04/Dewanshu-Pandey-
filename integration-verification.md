@@ -9,3 +9,7 @@ The FalconXAsmit repository remained clean throughout the consolidation. Only De
 With the FastAPI process running, the browser form submission created `PRJ-2026-988` at `74/100` High risk and `71%` delay likelihood. With the API process stopped, a second submission created `PRJ-2026-344` at `73/100` High risk and `87%` delay likelihood, proving the graceful fallback saves the project instead of breaking the UI.
 
 The backend was started from the consolidated DevZenith root, loaded all three copied joblib artifacts successfully, and returned `models_loaded: true`. Python compilation and JavaScript syntax checks passed. The Falcon source checkout remained clean.
+
+## Hackathon MVP persistence verification
+
+The new `/api/assessments` endpoint created and returned a SQLite-backed assessment with the copied ML models. A subsequent frontend reload called `GET /api/assessments` and hydrated the saved record into the Overview dashboard as `ML-1 — Hackathon Highway Pilot — 74/100 High`, confirming data survives a page reload during the demo.

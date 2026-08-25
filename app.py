@@ -6,11 +6,16 @@ Endpoints:
   GET  /redoc          → ReDoc (API docs)
   GET  /health         → Health check
   POST /api/predict    → Predict risk & delay
+  GET  /api/assessments → List saved assessments
+  POST /api/assessments → Predict and persist an assessment
   GET  /api/features   → List input features & valid options
   POST /api/recommend  → Get AI-generated recommendations to reduce land dispute
 """
 
 import os
+import json
+import sqlite3
+from datetime import datetime, timezone
 import joblib
 import numpy as np
 import pandas as pd
@@ -48,6 +53,16 @@ app.add_middleware(
 # Load models at startup
 # ---------------------------------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.getenv("ZAMEEN_DB_PATH", os.path.join(BASE_DIR, "zameen.db"))
+
+
+def init_database():
+    with sqlite3.connect(DB_PATH) as connection:
+        connection.execute("CREATE TABLE IF NOT EXISTS assessments (id INTEGER PRIMARY KEY AUTOINCREMENT, project_name TEXT NOT NULL, payload_json TEXT NOT NULL, prediction_json TEXT NOT NULL, created_at TEXT NOT NULL)")
+        connection.commit()
+
+
+init_database()
 
 try:
     risk_classifier = joblib.load(os.path.join(BASE_DIR, "risk_classifier.joblib"))
@@ -147,6 +162,11 @@ class PredictionResponse(BaseModel):
     risk_probabilities: dict
 
 
+class AssessmentCreate(BaseModel):
+    project_name: str = Field(..., min_length=1, max_length=180)
+    project: ProjectInput
+
+
 class RecommendRequest(BaseModel):
     """Project input data + predicted risk label for generating AI recommendations."""
     project: ProjectInput
@@ -239,6 +259,26 @@ async def predict(project: ProjectInput):
         )
     except Exception as e:
         raise HTTPException(500, f"Prediction failed: {e}")
+
+
+@app.get("/api/assessments")
+async def list_assessments(limit: int = 50):
+    safe_limit = max(1, min(limit, 200))
+    with sqlite3.connect(DB_PATH) as connection:
+        connection.row_factory = sqlite3.Row
+        rows = connection.execute("SELECT id, project_name, payload_json, prediction_json, created_at FROM assessments ORDER BY id DESC LIMIT ?", (safe_limit,)).fetchall()
+    return [{"id": row["id"], "project_name": row["project_name"], "project": json.loads(row["payload_json"]), **json.loads(row["prediction_json"]), "created_at": row["created_at"]} for row in rows]
+
+
+@app.post("/api/assessments")
+async def create_assessment(request: AssessmentCreate):
+    prediction = await predict(request.project)
+    created_at = datetime.now(timezone.utc).isoformat()
+    with sqlite3.connect(DB_PATH) as connection:
+        cursor = connection.execute("INSERT INTO assessments (project_name, payload_json, prediction_json, created_at) VALUES (?, ?, ?, ?)", (request.project_name, request.project.model_dump_json(), prediction.model_dump_json(), created_at))
+        connection.commit()
+        assessment_id = cursor.lastrowid
+    return {"id": assessment_id, "project_name": request.project_name, "project": request.project.model_dump(), **prediction.model_dump(), "created_at": created_at}
 
 
 @app.post("/api/recommend", response_model=RecommendResponse)

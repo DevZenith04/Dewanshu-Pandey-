@@ -64,7 +64,16 @@ Open [http://127.0.0.1:8123](http://127.0.0.1:8123). Use the **New assessment** 
 
 ## Prediction behavior
 
-The frontend sends all required backend fields. The form collects the core project inputs and supplies explicit temporary defaults for fields not yet exposed in the UI, including approval stage, legal-dispute status, possession status, stakeholder responsiveness, historical district delay rate, coordination issues, notification age, planned duration, and project age.
+The frontend sends all required backend fields. The form collects the core project inputs and supplies explicit temporary defaults for fields not yet exposed in the UI, including approval stage, legal-dispute status, possession status, stakeholder responsiveness, historical district delay rate, coordination issues, notification age, planned duration, and project age. For the hackathon MVP, the FastAPI service stores every successful assessment in a lightweight local SQLite database and the dashboard hydrates saved assessments on reload.
+
+The persistence endpoints are:
+
+```text
+GET  /api/assessments       recent saved assessments
+POST /api/assessments       predict and persist a new assessment
+```
+
+The `POST /api/assessments` route returns the prediction and the saved record in one response, which keeps the demo flow fast and easy to explain. The database path can be changed with `ZAMEEN_DB_PATH`; the default is `zameen.db` beside `app.py`. For a multi-user production deployment, replace this SQLite adapter with PostgreSQL or another managed database.
 
 On a successful API response, the dashboard stores the returned risk category, delay probability, and risk-probability breakdown. The displayed risk score is a weighted score derived from the model probabilities. If the backend is unavailable, the project is still saved using a clearly marked local fallback estimate so the dashboard remains usable.
 

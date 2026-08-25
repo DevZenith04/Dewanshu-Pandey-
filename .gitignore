@@ -6,3 +6,7 @@ coverage/
 *.log
 .env*
 !.env.example
+
+zameen.db
+*.db
+__pycache__/

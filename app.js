@@ -192,7 +192,7 @@ async function addProject(form) {
   if (status) status.textContent = 'Running the land-risk model…';
 
   const payload = api.buildPayload(data);
-  const prediction = await api.predict(payload);
+  const prediction = await api.assess(data.title, payload);
   const riskScore = api.riskScore(prediction);
   const riskCategory = String(prediction.risk_category || '').toUpperCase();
   const riskLevel = ['LOW', 'MEDIUM', 'HIGH'].includes(riskCategory) ? riskCategory : riskScore >= 70 ? 'HIGH' : riskScore >= 42 ? 'MEDIUM' : 'LOW';
@@ -202,6 +202,17 @@ async function addProject(form) {
   const project = { id: `PRJ-${now.getFullYear()}-${Math.floor(100 + Math.random() * 900)}`, title: data.title, district: payload.district, state: payload.state, landType: payload.project_type, acquisitionStage: payload.approval_stage.toUpperCase(), riskScore, riskLevel, hectares: payload.land_area_hectares, affectedFamilies: payload.affected_families, projectAgeMonths: Math.round(payload.project_age_days / 30), plannedDurationMonths: Math.round(payload.planned_duration_days / 30), lat: '20.5937° N', lon: '78.9629° E', surveyorId: 'OP-100-ADM', entryDate: now.toISOString().split('T')[0].replace(/-/g, '.'), lastSync: now.toISOString(), probabilityOfDelay: `${delayProbability}%`, delayPredictionText: `+${Math.max(1, Math.round(payload.planned_duration_days * Number(prediction.delay_probability || 0)))} days delay predicted`, likelihoodPercent: delayProbability, phase: 'Land Acquisition', locationDetails: `${payload.district}, ${payload.state} • ${payload.project_type}`, compensationStatus: payload.compensation_status, compDisbursedPercent: payload.compensation_disbursed_pct, rehabProgressPercent: payload.rehabilitation_progress_pct, approvalStage: payload.approval_stage.toUpperCase(), legalDisputeStatus: payload.legal_dispute_status, legalDisputesCount: payload.legal_disputes_count, possessionStatus: payload.possession_status, daysSinceNotification: payload.days_since_notification, coordinationIssues: payload.inter_department_coordination_issues, historicalDistrictDelayRate: payload.historical_district_delay_rate, stakeholderResponsiveness: payload.stakeholder_responsiveness_score, predictionSource: prediction.source === 'ml' ? 'FastAPI ML model' : 'Local fallback estimate', predictionError: prediction.error || null, shapFactors: [{ driver: 'Model-generated risk category', vector: 'up', impact: riskScore }], directives: [], milestones: [], riskPredictionBreakdown: probabilityBreakdown };
   state.projects.unshift(project); state.selectedProject = project; state.stats.totalProjectsActive += 1; state.parcels.unshift({ id: `PRC-${Date.now().toString().slice(-5)}`, owner: `${payload.district} Land Development Authority`, deedRef: `Ref: ${project.id}`, cadastralRef: `CAD-${Math.floor(100 + Math.random() * 900)}-SEC-1`, geoCoords: `${project.lat} ${project.lon}`, status: 'SURVEYED' }); state.newEntryOpen = false; state.activeTab = 'projects'; render();
 }
+
+function assessmentToProject(record) {
+  const payload = record.project || {};
+  const riskScore = window.ZameenApi.riskScore(record);
+  const delayProbability = Math.round(Number(record.delay_probability || 0) * 100);
+  const riskLevel = String(record.risk_category || 'Medium').toUpperCase();
+  const createdAt = record.created_at || new Date().toISOString();
+  return { id: `ML-${record.id}`, title: record.project_name || 'Untitled assessment', district: payload.district || 'Unknown district', state: payload.state || 'Unknown state', landType: payload.project_type || 'Infrastructure project', acquisitionStage: String(payload.approval_stage || 'SIA Completed').toUpperCase(), riskScore, riskLevel, hectares: payload.land_area_hectares || 0, affectedFamilies: payload.affected_families || 0, projectAgeMonths: Math.round((payload.project_age_days || 0) / 30), plannedDurationMonths: Math.round((payload.planned_duration_days || 0) / 30), lat: '20.5937° N', lon: '78.9629° E', surveyorId: 'ML-API', entryDate: createdAt.slice(0, 10).replace(/-/g, '.'), lastSync: createdAt, probabilityOfDelay: `${delayProbability}%`, delayPredictionText: `+${Math.max(1, Math.round((payload.planned_duration_days || 365) * Number(record.delay_probability || 0)))} days delay predicted`, likelihoodPercent: delayProbability, phase: 'Land Acquisition', locationDetails: `${payload.district || 'Unknown'}, ${payload.state || 'Unknown'} • ${payload.project_type || 'Infrastructure project'}`, compensationStatus: payload.compensation_status, compDisbursedPercent: payload.compensation_disbursed_pct, rehabProgressPercent: payload.rehabilitation_progress_pct, approvalStage: payload.approval_stage, legalDisputeStatus: payload.legal_dispute_status, legalDisputesCount: payload.legal_disputes_count, possessionStatus: payload.possession_status, daysSinceNotification: payload.days_since_notification, coordinationIssues: payload.inter_department_coordination_issues, historicalDistrictDelayRate: payload.historical_district_delay_rate, stakeholderResponsiveness: payload.stakeholder_responsiveness_score, predictionSource: 'Persisted FastAPI ML assessment', predictionError: null, shapFactors: [{ driver: 'Persisted model prediction', vector: 'up', impact: riskScore }], directives: [], milestones: [], riskPredictionBreakdown: Object.entries(record.risk_probabilities || {}).map(([label, value]) => ({ label, value: Math.round(Number(value) * 100) })) };
+}
+
+function hydrateAssessments() { const api = window.ZameenApi; if (!api?.loadAssessments) return; api.loadAssessments().then((records) => { const remote = records.map(assessmentToProject).filter((project) => !state.projects.some((existing) => existing.id === project.id)); if (remote.length) { state.projects = [...remote, ...state.projects]; state.selectedProject = remote[0]; state.stats.totalProjectsActive += remote.length; render(); } }); }
 
 function render() { applyTheme(); window.ZameenCharts?.destroyCharts(); app.innerHTML = shell(); bindEvents(); window.ZameenCharts?.renderCharts({ projects: state.projects, theme: state.theme }); const content = app.querySelector('.content'); if (content) { content.classList.remove('view-enter'); requestAnimationFrame(() => content.classList.add('view-enter')); } }
 function applyTheme() { document.documentElement.dataset.theme = state.theme; }
@@ -218,4 +229,5 @@ function bindEvents() {
 
 render();
 showIntro();
-window.addEventListener('load', () => render());
+hydrateAssessments();
+window.addEventListener('load', () => { render(); hydrateAssessments(); });

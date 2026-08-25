@@ -70,6 +70,27 @@
     }
   }
 
+  async function assess(projectName, payload) {
+    try {
+      const response = await fetch(endpoint('/api/assessments'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ project_name: projectName, project: payload }) });
+      if (!response.ok) throw new Error(`Assessment API returned ${response.status}`);
+      return { ...(await response.json()), source: 'ml', persisted: true };
+    } catch (assessmentError) {
+      const prediction = await predict(payload);
+      return { ...prediction, source: prediction.source === 'ml' ? 'ml-unpersisted' : 'fallback', persisted: false, error: assessmentError.message };
+    }
+  }
+
+  async function loadAssessments() {
+    try {
+      const response = await fetch(endpoint('/api/assessments?limit=50'));
+      if (!response.ok) return [];
+      return await response.json();
+    } catch (error) {
+      return [];
+    }
+  }
+
   async function loadFeatures() {
     try {
       const response = await fetch(endpoint('/api/features'));
@@ -93,6 +114,6 @@
     return Math.round(clamp(weighted, 0, 100));
   }
 
-  window.ZameenApi = { defaults, get options() { return options; }, endpoint: configuredBase, buildPayload, fallbackPrediction, predict, loadFeatures, riskScore };
+  window.ZameenApi = { defaults, get options() { return options; }, endpoint: configuredBase, buildPayload, fallbackPrediction, predict, assess, loadAssessments, loadFeatures, riskScore };
   loadFeatures();
 })();
