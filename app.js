@@ -166,6 +166,7 @@ function showIntro() {
   }
 
   const introTiming = {
+    opening: 120,
     contoursIn: 220,
     line: 520,
     wordmark: 2000,
@@ -179,6 +180,7 @@ function showIntro() {
     introTimers = [];
   };
   introTimers = [
+    setTimeout(() => overlay.classList.add('intro-opening'), introTiming.opening),
     setTimeout(() => overlay.classList.add('intro-contours-in'), introTiming.contoursIn),
     setTimeout(() => overlay.classList.add('intro-line'), introTiming.line),
     setTimeout(() => overlay.classList.add('intro-wordmark'), introTiming.wordmark),
