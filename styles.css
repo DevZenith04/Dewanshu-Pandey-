@@ -398,3 +398,13 @@ html[data-theme='dark'] .panel-heading, html[data-theme='dark'] .toolbar, html[d
 }
 html[data-theme='dark'] .brand { border-bottom-color: rgba(236,247,247,.14); }
 html[data-theme='dark'] .brand small { color: #aebfc2; }
+
+/* Prediction provenance: distinguish live model output from local fallback estimates. */
+.prediction-source { display: inline-flex; align-items: center; gap: .35rem; margin-left: .45rem; padding: .28rem .5rem; border-radius: 999px; font: 700 .62rem 'Barlow Condensed'; letter-spacing: .04em; text-transform: uppercase; vertical-align: middle; }
+.prediction-source-ml { color: #2e6f63; background: rgba(96,176,154,.14); border: 1px solid rgba(96,176,154,.34); }
+.prediction-source-fallback { color: #8b4b28; background: rgba(209,138,66,.16); border: 1px solid rgba(209,138,66,.42); }
+.prediction-warning { display: flex; align-items: center; gap: .4rem; margin: .7rem 0; padding: .6rem .7rem; color: #8b4b28; background: rgba(209,138,66,.1); border: 1px solid rgba(209,138,66,.28); border-radius: .7rem; font: 400 .72rem/1.35 'Newsreader'; }
+.prediction-warning .material-symbols-outlined { font-size: 1rem; }
+html[data-theme='dark'] .prediction-source-ml { color: #9ee0ca; background: rgba(96,176,154,.12); border-color: rgba(126,213,187,.34); }
+html[data-theme='dark'] .prediction-source-fallback, html[data-theme='dark'] .prediction-warning { color: #f3c28a; background: rgba(209,138,66,.13); border-color: rgba(232,168,93,.42); }
+@media (max-width: 640px) { .prediction-source { display: table; margin: .4rem 0 0; } }

@@ -1,6 +1,8 @@
 {
   "name": "Zameen Vivaad AI",
-  "description": "Land Acquisition, Legal Dispute Resolution & Risk Forecast Engine for Government ADM Registries.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "description": "Land acquisition dispute and delay-risk intelligence product for Indian infrastructure projects.",
+  "stack": ["Vanilla HTML/CSS/JavaScript", "FastAPI", "scikit-learn", "XGBoost", "SQLite"],
+  "primaryEntryPoint": "index.html",
+  "apiEntryPoint": "app.py",
+  "requestFramePermissions": []
 }
