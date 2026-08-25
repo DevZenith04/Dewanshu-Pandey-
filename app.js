@@ -136,16 +136,37 @@ function reportModal() {
 }
 
 function showIntro() {
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || sessionStorage.getItem('zv_splash_seen') === 'true') return;
+  if (sessionStorage.getItem('zv_splash_seen') === 'true') return;
+  sessionStorage.setItem('zv_splash_seen', 'true');
+
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const overlay = document.createElement('div');
-  overlay.className = 'intro-overlay intro-start';
+  overlay.className = `intro-overlay${reducedMotion ? ' intro-reduced' : ''}`;
+  overlay.setAttribute('aria-hidden', 'true');
   overlay.innerHTML = `<svg class="intro-contours" viewBox="0 0 1440 900" preserveAspectRatio="none" aria-hidden="true"><path d="M-40 210 C 220 100 330 310 620 220 S 1060 80 1480 190"/><path d="M-40 250 C 240 125 360 360 650 260 S 1090 120 1480 230"/><path d="M-40 670 C 260 560 390 820 720 670 S 1120 520 1480 620"/><path d="M-40 710 C 280 590 410 860 760 710 S 1160 560 1480 660"/><ellipse cx="1160" cy="390" rx="210" ry="120"/><ellipse cx="1160" cy="390" rx="280" ry="170"/></svg><div class="intro-boundary"><span></span></div><div class="intro-lockup"><div class="intro-kicker">A field intelligence system</div><div class="intro-wordmark">Zameen Vivaad <em>AI</em></div><div class="intro-tagline">See the dispute before it stalls the land.</div></div>`;
+  document.body.classList.add('intro-running');
   document.body.appendChild(overlay);
-  requestAnimationFrame(() => overlay.classList.add('intro-line'));
-  setTimeout(() => overlay.classList.add('intro-wordmark'), 510);
-  setTimeout(() => overlay.classList.add('intro-tagline'), 820);
-  setTimeout(() => overlay.classList.add('intro-fadeout'), 1080);
-  setTimeout(() => { sessionStorage.setItem('zv_splash_seen', 'true'); overlay.remove(); }, 1540);
+
+  if (reducedMotion) {
+    document.body.classList.add('intro-content-reveal');
+    overlay.remove();
+    document.body.classList.remove('intro-running', 'intro-content-reveal');
+    return;
+  }
+
+  const finish = () => {
+    overlay.remove();
+    document.body.classList.remove('intro-running', 'intro-content-reveal');
+  };
+  setTimeout(() => overlay.classList.add('intro-contours-in'), 300);
+  setTimeout(() => overlay.classList.add('intro-line'), 700);
+  setTimeout(() => overlay.classList.add('intro-wordmark'), 2000);
+  setTimeout(() => overlay.classList.add('intro-tagline'), 2700);
+  setTimeout(() => {
+    document.body.classList.add('intro-content-reveal');
+    overlay.classList.add('intro-fadeout');
+  }, 3400);
+  setTimeout(finish, 3900);
 }
 
 function addProject(form) {
