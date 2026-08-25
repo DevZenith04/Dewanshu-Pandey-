@@ -136,16 +136,30 @@ function reportModal() {
 }
 
 function showIntro() {
-  if (sessionStorage.getItem('zv_splash_seen') === 'true') return;
-  sessionStorage.setItem('zv_splash_seen', 'true');
+  let splashSeen = false;
+  try {
+    splashSeen = sessionStorage.getItem('zv_splash_seen') === 'true' && sessionStorage.getItem('zv_splash_version') === '3';
+    sessionStorage.setItem('zv_splash_seen', 'true');
+    sessionStorage.setItem('zv_splash_version', '3');
+  } catch (error) {
+    /* Continue with the splash when session storage is unavailable. */
+  }
+  const existingOverlay = document.querySelector('#initial-splash');
+  if (splashSeen) {
+    existingOverlay?.remove();
+    return;
+  }
 
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const overlay = document.createElement('div');
+  const overlay = existingOverlay || document.createElement('div');
   overlay.className = `intro-overlay${reducedMotion ? ' intro-reduced' : ''}`;
   overlay.setAttribute('aria-hidden', 'true');
-  overlay.innerHTML = `<svg class="intro-contours" viewBox="0 0 1440 900" preserveAspectRatio="none" aria-hidden="true"><path d="M-40 210 C 220 100 330 310 620 220 S 1060 80 1480 190"/><path d="M-40 250 C 240 125 360 360 650 260 S 1090 120 1480 230"/><path d="M-40 670 C 260 560 390 820 720 670 S 1120 520 1480 620"/><path d="M-40 710 C 280 590 410 860 760 710 S 1160 560 1480 660"/><ellipse cx="1160" cy="390" rx="210" ry="120"/><ellipse cx="1160" cy="390" rx="280" ry="170"/></svg><div class="intro-boundary"><span></span></div><div class="intro-lockup"><div class="intro-kicker">A field intelligence system</div><div class="intro-wordmark">Zameen Vivaad <em>AI</em></div><div class="intro-tagline">See the dispute before it stalls the land.</div></div>`;
+  if (!existingOverlay) {
+    overlay.innerHTML = `<svg class="intro-contours" viewBox="0 0 1440 900" preserveAspectRatio="none" aria-hidden="true"><path d="M-40 210 C 220 100 330 310 620 220 S 1060 80 1480 190"/><path d="M-40 250 C 240 125 360 360 650 260 S 1090 120 1480 230"/><path d="M-40 670 C 260 560 390 820 720 670 S 1120 520 1480 620"/><path d="M-40 710 C 280 590 410 860 760 710 S 1160 560 1480 660"/><ellipse cx="1160" cy="390" rx="210" ry="120"/><ellipse cx="1160" cy="390" rx="280" ry="170"/></svg><div class="intro-boundary"><span></span></div><div class="intro-lockup"><div class="intro-kicker">A field intelligence system</div><div class="intro-wordmark">Zameen Vivaad <em>AI</em></div><div class="intro-tagline">See the dispute before it stalls the land.</div></div>`;
+  }
+  document.documentElement.classList.remove('skip-initial-splash');
+  if (!existingOverlay) document.body.appendChild(overlay);
   document.body.classList.add('intro-running');
-  document.body.appendChild(overlay);
 
   if (reducedMotion) {
     document.body.classList.add('intro-content-reveal');

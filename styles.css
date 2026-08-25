@@ -39,6 +39,7 @@ nav { display: grid; gap: 4px; }
 @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
 /* Initial-load field note: separate from navigation and replay-protected per session. */
+.skip-initial-splash #initial-splash { display: none; }
 .app-shell { transition: opacity .4s ease-in-out, transform .4s ease-in-out; }
 body.intro-running .app-shell { opacity: 0; pointer-events: none; transform: translateY(8px); }
 body.intro-content-reveal .app-shell { opacity: 1; pointer-events: auto; transform: translateY(0); }
@@ -356,3 +357,15 @@ html[data-theme='dark'] .vanilla-modal-header { background: linear-gradient(145d
 html[data-theme='dark'] .form-grid input, html[data-theme='dark'] .form-grid select { background: rgba(255,255,255,.06); color: var(--ink); border-color: rgba(236,247,247,.18); }
 html[data-theme='dark'] .chart-wrap canvas { filter: drop-shadow(0 16px 28px rgba(0,0,0,.3)); }
 ''
+
+
+/* Final contrast pass: cards must read as distinct glass planes, not fog over the page. */
+.app-shell { background: radial-gradient(circle at 10% 8%, rgba(255,255,255,.9), transparent 25%), radial-gradient(circle at 92% 12%, rgba(201,231,241,.8), transparent 28%), linear-gradient(135deg, #e5f2f7, #f3f8fa 48%, #dcecf2); }
+.panel, .metric-card, .archive-card { background: linear-gradient(145deg, rgba(255,255,255,.9), rgba(244,250,252,.72)); border-color: rgba(255,255,255,.98); box-shadow: 0 22px 52px rgba(42,88,108,.16), 0 2px 8px rgba(42,88,108,.06), inset 0 1px 0 rgba(255,255,255,.98); }
+.metric-card { border-top-color: var(--coral); }
+.panel::after, .metric-card::after, .archive-card::after { border-color: rgba(255,255,255,.52); opacity: 1; }
+html[data-theme='dark'] .app-shell { background: radial-gradient(circle at 8% 5%, rgba(99,139,139,.2), transparent 24%), radial-gradient(circle at 94% 13%, rgba(117,66,61,.18), transparent 26%), linear-gradient(135deg, #020304, #0b0e10 50%, #030405); }
+html[data-theme='dark'] .panel, html[data-theme='dark'] .metric-card, html[data-theme='dark'] .archive-card { background: linear-gradient(145deg, rgba(28,33,35,.92), rgba(9,11,13,.86)); border-color: rgba(236,247,247,.25); box-shadow: 0 28px 76px rgba(0,0,0,.62), 0 3px 12px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.15); }
+html[data-theme='dark'] .metric-card { border-top-color: var(--coral); }
+html[data-theme='dark'] .panel::after, html[data-theme='dark'] .metric-card::after, html[data-theme='dark'] .archive-card::after { border-color: rgba(236,247,247,.18); opacity: 1; }
+html[data-theme='dark'] .panel-heading, html[data-theme='dark'] .toolbar, html[data-theme='dark'] .snapshot-top, html[data-theme='dark'] .snapshot-facts, html[data-theme='dark'] .snapshot-section { border-color: rgba(236,247,247,.14); }

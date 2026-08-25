@@ -10,9 +10,34 @@
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,400..900&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,200..800&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css" />
+    <script>
+      try {
+        const splashSeen = sessionStorage.getItem('zv_splash_seen') === 'true' && sessionStorage.getItem('zv_splash_version') === '3';
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (splashSeen || reducedMotion) document.documentElement.classList.add('skip-initial-splash');
+      } catch (error) {
+        /* Keep the first-load experience available when storage is restricted. */
+      }
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   </head>
   <body>
+    <div id="initial-splash" class="intro-overlay" aria-hidden="true">
+      <svg class="intro-contours" viewBox="0 0 1440 900" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M-40 210 C 220 100 330 310 620 220 S 1060 80 1480 190" />
+        <path d="M-40 250 C 240 125 360 360 650 260 S 1090 120 1480 230" />
+        <path d="M-40 670 C 260 560 390 820 720 670 S 1120 520 1480 620" />
+        <path d="M-40 710 C 280 590 410 860 760 710 S 1160 560 1480 660" />
+        <ellipse cx="1160" cy="390" rx="210" ry="120" />
+        <ellipse cx="1160" cy="390" rx="280" ry="170" />
+      </svg>
+      <div class="intro-boundary"><span></span></div>
+      <div class="intro-lockup">
+        <div class="intro-kicker">A field intelligence system</div>
+        <div class="intro-wordmark">Zameen Vivaad <em>AI</em></div>
+        <div class="intro-tagline">See the dispute before it stalls the land.</div>
+      </div>
+    </div>
     <div id="app"></div>
     <script src="app-data.js"></script>
     <script src="chart.js"></script>
