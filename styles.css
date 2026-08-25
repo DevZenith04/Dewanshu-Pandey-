@@ -641,3 +641,49 @@ html[data-theme='dark'] .button.primary { background: linear-gradient(145deg, #3
 html[data-theme='dark'] .button.secondary:hover, html[data-theme='dark'] .icon-button:hover, html[data-theme='dark'] .notification-button:hover { background: linear-gradient(145deg, rgba(255,255,255,.23), rgba(124,197,182,.1)); }
 html[data-theme='dark'] .project-row:hover, html[data-theme='dark'] .project-row.selected, html[data-theme='dark'] .priority-item:hover, html[data-theme='dark'] .analysis-row:hover, html[data-theme='dark'] .registry-row:hover { background: linear-gradient(105deg, rgba(124,197,182,.2), rgba(255,255,255,.07)); }
 html[data-theme='dark'] .map-panel, html[data-theme='dark'] .chart-wrap { background: linear-gradient(145deg, rgba(25,46,49,.8), rgba(8,13,14,.72)); border-color: rgba(236,247,247,.2); }
+
+
+/* Splash opening correction: never leave the first frame visually empty. */
+.intro-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 34px;
+  margin-bottom: 20px;
+  padding: 8px 15px;
+  border: 1px solid rgba(189,104,90,.48);
+  border-radius: 999px;
+  background: rgba(255,255,255,.48);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.8), 0 8px 24px rgba(122,90,79,.1);
+  color: #9c584e;
+  font-size: 13px;
+  letter-spacing: .16em;
+  opacity: 1;
+  transform: none;
+  transition: opacity .45s ease-in-out, transform .45s ease-in-out;
+}
+.intro-kicker::before, .intro-kicker::after {
+  content: '';
+  width: 24px;
+  height: 1px;
+  flex: 0 0 24px;
+  background: currentColor;
+  opacity: .62;
+}
+.intro-overlay.intro-opening .intro-kicker,
+.intro-overlay.intro-wordmark .intro-kicker,
+.intro-overlay.intro-tagline .intro-kicker,
+.intro-overlay.intro-fadeout .intro-kicker {
+  opacity: 1;
+  transform: translateY(0);
+}
+html[data-theme='dark'] .intro-kicker {
+  border-color: rgba(242,155,139,.5);
+  background: rgba(255,255,255,.08);
+  color: #f2a294;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 10px 26px rgba(0,0,0,.28);
+}
+@media (max-width: 520px) {
+  .intro-kicker { min-height: 32px; padding-inline: 11px; font-size: 11px; letter-spacing: .12em; }
+  .intro-kicker::before, .intro-kicker::after { width: 14px; flex-basis: 14px; }
+}
