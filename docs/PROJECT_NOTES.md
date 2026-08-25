@@ -4,9 +4,9 @@ This repository is the current **vanilla HTML/CSS/JavaScript frontend plus FastA
 
 ## Shipped startup experience
 
-The Home splash runs for approximately **five seconds** when the page first loads or when the user explicitly activates Overview/Home. It does not run on Project desk, Risk studio, Parcel registry, or Archive navigation. The sequence starts with a parchment hold, fades in the contour pattern, traces the survey hairline, introduces the kicker and wordmark, fades in the tagline, and overlaps the final contour fade with the dashboard reveal. Reduced-motion users skip the animation and receive the settled dashboard immediately.
+The Home splash runs for approximately **six seconds** when the page first loads or when the user explicitly activates Overview/Home. It does not run on Project desk, Risk studio, Parcel registry, or Archive navigation. The sequence starts with a parchment hold, fades in the contour pattern, traces the survey hairline, introduces the kicker and wordmark earlier, fades in the tagline, holds the complete lockup for several seconds, and overlaps the final contour fade with the dashboard reveal. Reduced-motion users skip the animation and receive the settled dashboard immediately.
 
-The current scheduler places the wordmark around 1.65 seconds, the tagline around 2.45 seconds, begins the dashboard reveal around 4.1 seconds, and removes the overlay at 5 seconds. This timing is the authoritative behavior for the product.
+The current scheduler introduces the wordmark around 1.35 seconds, the tagline around 2.1 seconds, begins the dashboard reveal around 5.1 seconds, and removes the overlay at 6 seconds. This gives the complete lockup a substantially longer, readable hold instead of letting the name disappear immediately after appearing.
 
 ## Theme direction
 

@@ -165,21 +165,29 @@ function showIntro() {
     return;
   }
 
+  const introTiming = {
+    contoursIn: 220,
+    line: 520,
+    wordmark: 1350,
+    tagline: 2100,
+    reveal: 5100,
+    finish: 6000,
+  };
   const finish = () => {
     overlay.remove();
     document.body.classList.remove('intro-running', 'intro-content-reveal');
     introTimers = [];
   };
   introTimers = [
-    setTimeout(() => overlay.classList.add('intro-contours-in'), 220),
-    setTimeout(() => overlay.classList.add('intro-line'), 520),
-    setTimeout(() => overlay.classList.add('intro-wordmark'), 1650),
-    setTimeout(() => overlay.classList.add('intro-tagline'), 2450),
+    setTimeout(() => overlay.classList.add('intro-contours-in'), introTiming.contoursIn),
+    setTimeout(() => overlay.classList.add('intro-line'), introTiming.line),
+    setTimeout(() => overlay.classList.add('intro-wordmark'), introTiming.wordmark),
+    setTimeout(() => overlay.classList.add('intro-tagline'), introTiming.tagline),
     setTimeout(() => {
       document.body.classList.add('intro-content-reveal');
       overlay.classList.add('intro-fadeout');
-    }, 4100),
-    setTimeout(finish, 5000),
+    }, introTiming.reveal),
+    setTimeout(finish, introTiming.finish),
   ];
 }
 
