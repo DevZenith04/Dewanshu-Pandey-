@@ -171,7 +171,7 @@ function showIntro() {
     line: 520,
     wordmark: 2000,
     tagline: 2450,
-    reveal: 4550,
+    reveal: 4950,
     finish: 5000,
   };
   const finish = () => {
