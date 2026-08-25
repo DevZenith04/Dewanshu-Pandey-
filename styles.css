@@ -408,3 +408,79 @@ html[data-theme='dark'] .brand small { color: #aebfc2; }
 html[data-theme='dark'] .prediction-source-ml { color: #9ee0ca; background: rgba(96,176,154,.12); border-color: rgba(126,213,187,.34); }
 html[data-theme='dark'] .prediction-source-fallback, html[data-theme='dark'] .prediction-warning { color: #f3c28a; background: rgba(209,138,66,.13); border-color: rgba(232,168,93,.42); }
 @media (max-width: 640px) { .prediction-source { display: table; margin: .4rem 0 0; } }
+
+/* --------------------------------------------------------------------------
+   Glassmorphism design language
+   Reference tokens are mapped onto the existing Zameen palette; the visual
+   structure and information architecture remain unchanged.
+   -------------------------------------------------------------------------- */
+:root {
+  --design-radius-sm: 12px;
+  --design-radius-md: 18px;
+  --design-radius-lg: 28px;
+  --design-blur-surface: 20px;
+  --design-saturate: 160%;
+  --design-ease-out: cubic-bezier(.2,.9,.25,1);
+  --design-duration-hover: 220ms;
+  --design-duration-press: 100ms;
+  --design-glass-fill: rgba(255,255,255,.09);
+  --design-glass-fill-strong: rgba(255,255,255,.16);
+  --design-glass-border: rgba(255,255,255,.22);
+  --design-glass-border-strong: rgba(255,255,255,.42);
+  --design-glass-highlight: inset 0 1px 0 rgba(255,255,255,.2);
+  --design-glass-highlight-strong: inset 0 1px 0 rgba(255,255,255,.52);
+  --design-surface-shadow: 0 12px 34px rgba(74,117,133,.14);
+  --design-focus-ring: 0 0 0 2px rgba(189,104,90,.9);
+}
+
+/* Keep every glass surface visibly layered over the atmospheric canvas. */
+.panel, .metric-card, .map-panel, .sidebar-status, .model-status, .vanilla-modal, .form-note {
+  background-image: linear-gradient(135deg, rgba(255,255,255,.1), transparent 48%);
+  box-shadow: var(--shadow), var(--design-surface-shadow), var(--design-glass-highlight);
+  backdrop-filter: blur(var(--design-blur-surface)) saturate(var(--design-saturate));
+  -webkit-backdrop-filter: blur(var(--design-blur-surface)) saturate(var(--design-saturate));
+}
+
+.button, .icon-button, .notification-button, .nav-item, .project-row, .priority-item, .text-button {
+  transition: transform var(--design-duration-hover) var(--design-ease-out), opacity var(--design-duration-hover) var(--design-ease-out), box-shadow var(--design-duration-hover) var(--design-ease-out), background-color var(--design-duration-hover) var(--design-ease-out), border-color var(--design-duration-hover) var(--design-ease-out);
+}
+
+.button.primary {
+  box-shadow: 0 8px 18px rgba(23,51,68,.17), var(--design-glass-highlight-strong);
+}
+.button.primary:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(23,51,68,.23), var(--design-glass-highlight-strong); }
+.button.primary:active { transform: translateY(-1px) scale(.97); transition-duration: var(--design-duration-press); }
+.button.secondary { background: var(--design-glass-fill); box-shadow: var(--design-glass-highlight); }
+.button.secondary:hover { transform: translateY(-2px); background: var(--design-glass-fill-strong); border-color: var(--design-glass-border-strong); }
+.button.secondary:active { transform: translateY(0) scale(.97); transition-duration: var(--design-duration-press); }
+
+.icon-button, .notification-button {
+  box-shadow: var(--design-glass-highlight);
+  backdrop-filter: blur(var(--design-blur-surface)) saturate(var(--design-saturate));
+  -webkit-backdrop-filter: blur(var(--design-blur-surface)) saturate(var(--design-saturate));
+}
+.icon-button:hover, .notification-button:hover { transform: translateY(-2px); background: var(--design-glass-fill-strong); border-color: var(--design-glass-border-strong); }
+.icon-button:active, .notification-button:active { transform: scale(.92); transition-duration: var(--design-duration-press); }
+
+.nav-item:hover, .project-row:hover, .priority-item:hover { transform: translateY(-2px); }
+.nav-item:active, .project-row:active, .priority-item:active { transform: scale(.98); transition-duration: var(--design-duration-press); }
+
+button:disabled, input:disabled, select:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: none; box-shadow: var(--design-focus-ring); }
+
+html[data-theme='dark'] {
+  --design-glass-fill: rgba(255,255,255,.07);
+  --design-glass-fill-strong: rgba(255,255,255,.13);
+  --design-glass-border: rgba(255,255,255,.18);
+  --design-glass-border-strong: rgba(255,255,255,.34);
+  --design-glass-highlight: inset 0 1px 0 rgba(255,255,255,.14);
+  --design-glass-highlight-strong: inset 0 1px 0 rgba(255,255,255,.34);
+  --design-surface-shadow: 0 16px 42px rgba(0,0,0,.38);
+}
+html[data-theme='dark'] .panel, html[data-theme='dark'] .metric-card, html[data-theme='dark'] .map-panel, html[data-theme='dark'] .sidebar-status, html[data-theme='dark'] .model-status, html[data-theme='dark'] .vanilla-modal, html[data-theme='dark'] .form-note {
+  background-image: linear-gradient(135deg, rgba(255,255,255,.065), transparent 48%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button, .icon-button, .notification-button, .nav-item, .project-row, .priority-item, .text-button { transition-duration: 1ms; }
+}
