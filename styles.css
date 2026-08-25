@@ -284,3 +284,17 @@ html[data-theme='dark'] .empty-state strong { color: #edf7f8; }
 html[data-theme='dark'] .registry-toolbar .search-box { background: rgba(255,255,255,.1); border-color: rgba(210,235,239,.25); }
 @media (max-width: 760px) { .registry-toolbar { align-items: stretch; flex-direction: column; } .registry-toolbar .search-box, .registry-toolbar .filter-tabs, .registry-toolbar .status-tabs { width: 100%; flex-basis: auto; } .registry-toolbar .filter-tabs { overflow-x: auto; } .registry-toolbar .filter-tabs button { flex: 0 0 auto; } }
 @media (prefers-reduced-motion: reduce) { .content.view-enter { animation: none; } }
+
+
+/* Expanded analytics glass surfaces */
+.charts-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.chart-panel { position: relative; overflow: hidden; isolation: isolate; }
+.chart-panel::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(135deg, rgba(255,255,255,.16), transparent 38%, rgba(127,198,184,.06)); pointer-events: none; }
+.chart-panel::after { content: ''; position: absolute; top: 0; left: 18%; right: 18%; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.8), transparent); opacity: .7; pointer-events: none; }
+.chart-wrap { min-height: 246px; position: relative; padding: 6px 0 0; }
+.chart-wrap.chart-tall { min-height: 260px; }
+.chart-wrap canvas { filter: drop-shadow(0 12px 22px rgba(7, 31, 40, .1)); }
+.chart-hint { border: 1px solid rgba(255,255,255,.38); background: rgba(255,255,255,.16); border-radius: 999px; padding: 6px 10px; color: var(--muted); font-size: 10px; letter-spacing: .04em; white-space: nowrap; }
+html[data-theme='dark'] .chart-hint { border-color: rgba(210,235,239,.2); background: rgba(255,255,255,.1); color: #b7cdd1; }
+@media (max-width: 900px) { .charts-grid { grid-template-columns: 1fr; } .chart-wrap, .chart-wrap.chart-tall { min-height: 230px; } }
+@media (max-width: 520px) { .chart-panel .panel-heading { align-items: flex-start; gap: 10px; } .chart-hint { font-size: 9px; padding: 5px 8px; } .chart-wrap, .chart-wrap.chart-tall { min-height: 210px; } }
