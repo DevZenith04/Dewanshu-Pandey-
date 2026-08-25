@@ -4,14 +4,14 @@
   function palette(theme) {
     const dark = theme === 'dark';
     return {
-      ink: dark ? '#edf7f8' : '#173344',
-      muted: dark ? '#a8bcc1' : '#71858b',
-      grid: dark ? 'rgba(210,235,239,.14)' : 'rgba(23,51,68,.1)',
-      coral: dark ? '#f3a497' : '#bd685a',
-      teal: dark ? '#7fc6b8' : '#477e78',
-      ochre: dark ? '#e7bd76' : '#ca8b45',
-      green: dark ? '#9bcda8' : '#73ad88',
-      surface: dark ? 'rgba(255,255,255,.09)' : 'rgba(255,255,255,.58)',
+      ink: dark ? '#f3f8f8' : '#173344',
+      muted: dark ? '#a6b4b8' : '#71858b',
+      grid: dark ? 'rgba(236,247,247,.12)' : 'rgba(23,51,68,.1)',
+      coral: dark ? '#ff9d8c' : '#bd685a',
+      teal: dark ? '#7cc5b6' : '#477e78',
+      ochre: dark ? '#f0be73' : '#ca8b45',
+      green: dark ? '#99cda0' : '#73ad88',
+      surface: dark ? 'rgba(0,0,0,.44)' : 'rgba(255,255,255,.58)',
     };
   }
 
