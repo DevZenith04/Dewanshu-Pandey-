@@ -168,10 +168,10 @@ function showIntro() {
   const introTiming = {
     contoursIn: 220,
     line: 520,
-    wordmark: 1350,
-    tagline: 2100,
-    reveal: 5100,
-    finish: 6000,
+    wordmark: 2000,
+    tagline: 2450,
+    reveal: 4550,
+    finish: 5000,
   };
   const finish = () => {
     overlay.remove();
