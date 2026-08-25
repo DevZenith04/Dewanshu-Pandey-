@@ -266,3 +266,21 @@ html[data-theme='dark'] .vanilla-modal-actions { border-color: rgba(210,235,239,
 @media (max-width: 1100px) { .content { padding-inline: clamp(20px, 4vw, 34px); } .charts-grid { grid-template-columns: 1fr 1fr; } .chart-panel { min-height: 280px; } }
 @media (max-width: 760px) { .content { padding-inline: 14px; } .charts-grid { grid-template-columns: 1fr; gap: 12px; } .chart-panel { min-height: 270px; } .chart-wrap, .chart-doughnut { height: 205px; margin-inline: 12px; } .chart-panel .panel-heading { min-height: 70px; } .chart-hint { font-size: 9px; } .hero-actions { width: 100%; } .hero-actions .button { flex: 1; min-width: 0; } .page-heading .button { width: 100%; } .panel-heading { align-items: flex-start; } .panel-heading h2 { line-height: 1.02; } .top-actions { gap: 6px; } .theme-toggle { display: grid; } }
 @media (max-width: 430px) { .metrics-grid { grid-template-columns: 1fr; } .metric-card { min-height: 118px; } .hero-row h1, .page-heading h1 { font-size: 47px; } .hero-copy, .page-heading p { font-size: 16px; } .hero-actions { flex-direction: column; } .hero-actions .button { width: 100%; } .chart-wrap, .chart-doughnut { height: 190px; } }
+
+
+/* Cross-view registry controls and restrained view transitions */
+.registry-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 14px; }
+.registry-toolbar.compact { margin: 0 0 14px; }
+.registry-toolbar .search-box { flex: 1 1 240px; min-width: min(100%, 240px); }
+.registry-toolbar .filter-tabs { flex: 0 1 auto; max-width: 100%; overflow-x: auto; }
+.registry-toolbar .status-tabs { flex: 1 1 360px; }
+.registry-toolbar .status-tabs button { white-space: nowrap; }
+.content.view-enter { animation: viewEnter .34s cubic-bezier(.23,1,.32,1) both; }
+@keyframes viewEnter { from { opacity: .2; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.empty-state { display: grid; justify-items: center; gap: 8px; padding: 42px 20px; color: var(--muted, #71858b); text-align: center; }
+.empty-state .material-symbols-outlined { font-size: 28px; opacity: .7; }
+.empty-state strong { color: var(--ink, #173344); font: 600 18px 'Barlow Condensed'; }
+html[data-theme='dark'] .empty-state strong { color: #edf7f8; }
+html[data-theme='dark'] .registry-toolbar .search-box { background: rgba(255,255,255,.1); border-color: rgba(210,235,239,.25); }
+@media (max-width: 760px) { .registry-toolbar { align-items: stretch; flex-direction: column; } .registry-toolbar .search-box, .registry-toolbar .filter-tabs, .registry-toolbar .status-tabs { width: 100%; flex-basis: auto; } .registry-toolbar .filter-tabs { overflow-x: auto; } .registry-toolbar .filter-tabs button { flex: 0 0 auto; } }
+@media (prefers-reduced-motion: reduce) { .content.view-enter { animation: none; } }
