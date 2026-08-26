@@ -11,8 +11,22 @@
   };
 
   const config = window.ZAMEEN_CONFIG || {};
-  const configuredBase = localStorage.getItem('zv_api_base_url') || config.API_BASE_URL || 'http://127.0.0.1:8000';
+  const isLocalHost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  const configuredBase = localStorage.getItem('zv_api_base_url') || config.API_BASE_URL || (isLocalHost ? 'http://127.0.0.1:8000' : location.origin);
   let options = { ...defaults };
+  let sessionToken = localStorage.getItem('zv_session_token') || '';
+  let currentUser = JSON.parse(localStorage.getItem('zv_session_user') || 'null');
+  const authHeaders = () => sessionToken ? { Authorization: `Bearer ${sessionToken}` } : {};
+
+  async function login(accountId = localStorage.getItem('zv_demo_account') || 'state-admin') {
+    const response = await fetch(endpoint('/api/login'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ account_id: accountId }) });
+    if (!response.ok) throw new Error(`Login returned ${response.status}`);
+    const data = await response.json();
+    sessionToken = data.token; currentUser = data.user;
+    localStorage.setItem('zv_session_token', sessionToken); localStorage.setItem('zv_session_user', JSON.stringify(currentUser)); localStorage.setItem('zv_demo_account', accountId);
+    return currentUser;
+  }
+  const user = () => currentUser;
 
   const clamp = (value, min, max) => Math.min(max, Math.max(min, Number(value) || 0));
   const daysFromMonths = (value, minimum = 0) => Math.max(minimum, Math.round((Number(value) || 0) * 30));
@@ -72,7 +86,7 @@
 
   async function assess(projectName, payload) {
     try {
-      const response = await fetch(endpoint('/api/assessments'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ project_name: projectName, project: payload }) });
+      const response = await fetch(endpoint('/api/assessments'), { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ project_name: projectName, project: payload }) });
       if (!response.ok) throw new Error(`Assessment API returned ${response.status}`);
       return { ...(await response.json()), source: 'ml', persisted: true };
     } catch (assessmentError) {
@@ -83,12 +97,26 @@
 
   async function loadAssessments() {
     try {
-      const response = await fetch(endpoint('/api/assessments?limit=50'));
+      const response = await fetch(endpoint('/api/assessments?limit=50'), { headers: authHeaders() });
       if (!response.ok) return [];
       return await response.json();
     } catch (error) {
       return [];
     }
+  }
+
+  async function updateOutcome(id, actualDelayDays, actualCompletedAt = null) {
+    const response = await fetch(endpoint(`/api/assessments/${id}/outcome`), { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ actual_delay_days: Number(actualDelayDays), actual_completed_at: actualCompletedAt }) });
+    if (!response.ok) throw new Error(`Outcome API returned ${response.status}`);
+    return response.json();
+  }
+
+  async function loadAccuracy() {
+    try { const response = await fetch(endpoint('/api/monitoring/accuracy'), { headers: authHeaders() }); return response.ok ? response.json() : { resolved_cases: 0, cases: [] }; } catch (error) { return { resolved_cases: 0, cases: [], error: error.message }; }
+  }
+
+  async function loadAuditLog() {
+    try { const response = await fetch(endpoint('/api/audit-log'), { headers: authHeaders() }); return response.ok ? response.json() : []; } catch (error) { return []; }
   }
 
   async function healthCheck() {
@@ -127,6 +155,6 @@
     return Math.round(clamp(weighted, 0, 100));
   }
 
-  window.ZameenApi = { defaults, get options() { return options; }, endpoint: configuredBase, buildPayload, fallbackPrediction, predict, assess, loadAssessments, loadFeatures, healthCheck, riskScore };
+  window.ZameenApi = { defaults, get options() { return options; }, endpoint: configuredBase, buildPayload, fallbackPrediction, predict, assess, loadAssessments, loadFeatures, healthCheck, login, user, updateOutcome, loadAccuracy, loadAuditLog, riskScore };
   loadFeatures();
 })();

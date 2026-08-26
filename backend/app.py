@@ -15,11 +15,12 @@ Endpoints:
 import os
 import json
 import sqlite3
+import secrets
 from datetime import datetime, timezone
 import joblib
 import numpy as np
 import pandas as pd
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import Optional
@@ -63,6 +64,15 @@ DB_PATH = os.getenv("ZAMEEN_DB_PATH", os.path.join(BASE_DIR, "zameen.db"))
 def init_database():
     with sqlite3.connect(DB_PATH) as connection:
         connection.execute("CREATE TABLE IF NOT EXISTS assessments (id INTEGER PRIMARY KEY AUTOINCREMENT, project_name TEXT NOT NULL, payload_json TEXT NOT NULL, prediction_json TEXT NOT NULL, created_at TEXT NOT NULL)")
+        columns = {row[1] for row in connection.execute("PRAGMA table_info(assessments)").fetchall()}
+        for name, definition in {
+            "created_by": "TEXT NOT NULL DEFAULT 'demo-state-admin'",
+            "actual_delay_days": "INTEGER",
+            "actual_completed_at": "TEXT",
+        }.items():
+            if name not in columns:
+                connection.execute(f"ALTER TABLE assessments ADD COLUMN {name} {definition}")
+        connection.execute("CREATE TABLE IF NOT EXISTS audit_log (id INTEGER PRIMARY KEY AUTOINCREMENT, actor_id TEXT NOT NULL, actor_name TEXT NOT NULL, actor_role TEXT NOT NULL, action TEXT NOT NULL, resource_type TEXT NOT NULL, resource_id TEXT, created_at TEXT NOT NULL)")
         connection.commit()
 
 
@@ -171,6 +181,15 @@ class AssessmentCreate(BaseModel):
     project: ProjectInput
 
 
+class LoginRequest(BaseModel):
+    account_id: str = Field(..., min_length=1)
+
+
+class OutcomeUpdate(BaseModel):
+    actual_delay_days: int = Field(..., ge=0)
+    actual_completed_at: Optional[str] = None
+
+
 class RecommendRequest(BaseModel):
     """Project input data + predicted risk label for generating AI recommendations."""
     project: ProjectInput
@@ -188,6 +207,29 @@ class RecommendResponse(BaseModel):
 # ---------------------------------------------------------------------------
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 groq_client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
+
+DEMO_ACCOUNTS = {
+    "state-admin": {"id": "state-admin", "name": "Aditi Menon", "role": "State Administrator", "permissions": ["assess", "view_audit", "record_outcome"]},
+    "district-officer": {"id": "district-officer", "name": "Rohan Kulkarni", "role": "District Officer", "permissions": ["assess", "record_outcome"]},
+    "reviewer": {"id": "reviewer", "name": "Neha Iyer", "role": "Registry Reviewer", "permissions": ["assess"]},
+}
+SESSION_TOKENS = {}
+
+
+def authenticate(authorization: Optional[str], permission: Optional[str] = None):
+    token = (authorization or "").removeprefix("Bearer ").strip()
+    user = SESSION_TOKENS.get(token)
+    if not user:
+        raise HTTPException(401, "Login required.")
+    if permission and permission not in user["permissions"]:
+        raise HTTPException(403, "This demo account does not have that permission.")
+    return user
+
+
+def write_audit(user: dict, action: str, resource_type: str, resource_id: Optional[str] = None):
+    with sqlite3.connect(DB_PATH) as connection:
+        connection.execute("INSERT INTO audit_log (actor_id, actor_name, actor_role, action, resource_type, resource_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)", (user["id"], user["name"], user["role"], action, resource_type, resource_id, datetime.now(timezone.utc).isoformat()))
+        connection.commit()
 
 
 def build_recommendation_prompt(project: ProjectInput, risk_category: str, delay_probability: float) -> str:
@@ -222,6 +264,21 @@ Format your response as a numbered list (1. 2. 3. 4. 5.). Each recommendation sh
 @app.get("/health")
 async def health():
     return {"status": "healthy", "models_loaded": MODELS_LOADED, "ai_recommendations": groq_client is not None}
+
+
+@app.get("/api/accounts")
+async def accounts():
+    return [{key: value for key, value in account.items() if key != "permissions"} | {"permissions": account["permissions"]} for account in DEMO_ACCOUNTS.values()]
+
+
+@app.post("/api/login")
+async def login(request: LoginRequest):
+    user = DEMO_ACCOUNTS.get(request.account_id)
+    if not user:
+        raise HTTPException(401, "Unknown demo account.")
+    token = secrets.token_urlsafe(24)
+    SESSION_TOKENS[token] = user
+    return {"token": token, "user": user}
 
 
 @app.get("/api/features")
@@ -266,23 +323,68 @@ async def predict(project: ProjectInput):
 
 
 @app.get("/api/assessments")
-async def list_assessments(limit: int = 50):
+async def list_assessments(limit: int = 50, authorization: Optional[str] = Header(default=None)):
+    user = authenticate(authorization, "assess")
     safe_limit = max(1, min(limit, 200))
     with sqlite3.connect(DB_PATH) as connection:
         connection.row_factory = sqlite3.Row
-        rows = connection.execute("SELECT id, project_name, payload_json, prediction_json, created_at FROM assessments ORDER BY id DESC LIMIT ?", (safe_limit,)).fetchall()
-    return [{"id": row["id"], "project_name": row["project_name"], "project": json.loads(row["payload_json"]), **json.loads(row["prediction_json"]), "created_at": row["created_at"]} for row in rows]
+        rows = connection.execute("SELECT id, project_name, payload_json, prediction_json, created_at, created_by, actual_delay_days, actual_completed_at FROM assessments ORDER BY id DESC LIMIT ?", (safe_limit,)).fetchall()
+    return [{"id": row["id"], "project_name": row["project_name"], "project": json.loads(row["payload_json"]), **json.loads(row["prediction_json"]), "created_at": row["created_at"], "created_by": row["created_by"], "actual_delay_days": row["actual_delay_days"], "actual_completed_at": row["actual_completed_at"]} for row in rows]
 
 
 @app.post("/api/assessments")
-async def create_assessment(request: AssessmentCreate):
+async def create_assessment(request: AssessmentCreate, authorization: Optional[str] = Header(default=None)):
+    user = authenticate(authorization, "assess")
     prediction = await predict(request.project)
     created_at = datetime.now(timezone.utc).isoformat()
     with sqlite3.connect(DB_PATH) as connection:
-        cursor = connection.execute("INSERT INTO assessments (project_name, payload_json, prediction_json, created_at) VALUES (?, ?, ?, ?)", (request.project_name, request.project.model_dump_json(), prediction.model_dump_json(), created_at))
+        cursor = connection.execute("INSERT INTO assessments (project_name, payload_json, prediction_json, created_at, created_by) VALUES (?, ?, ?, ?, ?)", (request.project_name, request.project.model_dump_json(), prediction.model_dump_json(), created_at, user["id"]))
         connection.commit()
         assessment_id = cursor.lastrowid
-    return {"id": assessment_id, "project_name": request.project_name, "project": request.project.model_dump(), **prediction.model_dump(), "created_at": created_at}
+    write_audit(user, "assessment.created", "assessment", str(assessment_id))
+    return {"id": assessment_id, "project_name": request.project_name, "project": request.project.model_dump(), **prediction.model_dump(), "created_at": created_at, "created_by": user["id"]}
+
+
+@app.patch("/api/assessments/{assessment_id}/outcome")
+async def record_outcome(assessment_id: int, outcome: OutcomeUpdate, authorization: Optional[str] = Header(default=None)):
+    user = authenticate(authorization, "record_outcome")
+    completed_at = outcome.actual_completed_at or datetime.now(timezone.utc).isoformat()
+    with sqlite3.connect(DB_PATH) as connection:
+        cursor = connection.execute("UPDATE assessments SET actual_delay_days = ?, actual_completed_at = ? WHERE id = ?", (outcome.actual_delay_days, completed_at, assessment_id))
+        if cursor.rowcount == 0:
+            raise HTTPException(404, "Assessment not found.")
+        connection.commit()
+    write_audit(user, "assessment.outcome_recorded", "assessment", str(assessment_id))
+    return {"id": assessment_id, "actual_delay_days": outcome.actual_delay_days, "actual_completed_at": completed_at}
+
+
+@app.get("/api/monitoring/accuracy")
+async def monitoring_accuracy(authorization: Optional[str] = Header(default=None)):
+    authenticate(authorization, "assess")
+    with sqlite3.connect(DB_PATH) as connection:
+        connection.row_factory = sqlite3.Row
+        rows = connection.execute("SELECT id, project_name, prediction_json, payload_json, actual_delay_days, actual_completed_at FROM assessments WHERE actual_delay_days IS NOT NULL ORDER BY id DESC").fetchall()
+    cases = []
+    for row in rows:
+        prediction = json.loads(row["prediction_json"])
+        payload = json.loads(row["payload_json"])
+        planned_days = max(1, int(payload.get("planned_duration_days") or 1))
+        predicted_days = round(planned_days * float(prediction.get("delay_probability") or 0))
+        actual_days = int(row["actual_delay_days"])
+        cases.append({"id": row["id"], "project_name": row["project_name"], "predicted_delay_days": predicted_days, "actual_delay_days": actual_days, "absolute_error_days": abs(predicted_days - actual_days), "actual_completed_at": row["actual_completed_at"]})
+    mae = round(sum(case["absolute_error_days"] for case in cases) / len(cases), 1) if cases else None
+    within_30 = round(sum(case["absolute_error_days"] <= 30 for case in cases) / len(cases) * 100) if cases else None
+    return {"resolved_cases": len(cases), "mean_absolute_error_days": mae, "within_30_days_percent": within_30, "cases": cases}
+
+
+@app.get("/api/audit-log")
+async def audit_log(limit: int = 50, authorization: Optional[str] = Header(default=None)):
+    user = authenticate(authorization, "view_audit")
+    safe_limit = max(1, min(limit, 200))
+    with sqlite3.connect(DB_PATH) as connection:
+        connection.row_factory = sqlite3.Row
+        rows = connection.execute("SELECT id, actor_id, actor_name, actor_role, action, resource_type, resource_id, created_at FROM audit_log ORDER BY id DESC LIMIT ?", (safe_limit,)).fetchall()
+    return [dict(row) for row in rows]
 
 
 @app.post("/api/recommend", response_model=RecommendResponse)

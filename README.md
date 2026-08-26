@@ -85,3 +85,9 @@ streamlit run backend/streamlit_app.py
 ```
 
 The vanilla dashboard and FastAPI API are the primary integrated experience in this repository.
+
+## Demo security and model feedback loop
+
+The backend includes a deliberately small, transparent demo-account system for the hackathon. `POST /api/login` accepts `state-admin`, `district-officer`, or `reviewer` and returns a bearer session token with role permissions. The dashboard signs in as the selected demo account automatically; click the sidebar account card to cycle accounts and demonstrate role-gated behavior.
+
+Assessment records now include `created_by`, nullable `actual_delay_days`, and nullable `actual_completed_at` fields. A permitted account can record the eventual outcome through `PATCH /api/assessments/{id}/outcome`. `GET /api/monitoring/accuracy` compares predicted delay days against recorded actual delay days, and `GET /api/audit-log` lists authenticated assessment actions with actor and timestamp. This is a hackathon demonstration layer, not production IAM; production deployment should replace the in-memory tokens with an external identity provider and durable audit infrastructure.

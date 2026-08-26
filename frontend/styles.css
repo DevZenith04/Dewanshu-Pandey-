@@ -934,3 +934,21 @@ html[data-theme='dark'] .backend-offline, html[data-theme='dark'] .prediction-wa
 html[data-theme='dark'] .prediction-success { background: rgba(95,155,125,.14); color: #a9d8bd; border-color: rgba(124,197,182,.4); }
 @media (prefers-reduced-motion: reduce) { .button, .metric-card, .panel, .archive-card, .vanilla-modal, .vanilla-modal-backdrop, .form-invalid { transition: none !important; animation: none !important; } }
 @media (max-width: 760px) { .backend-status { font-size: 9px; padding-inline: 7px; } }
+.accuracy-panel { border-left: 3px solid #568b87; }
+.accuracy-grid { display: grid; grid-template-columns: .7fr .7fr 1.6fr; gap: 12px; margin-top: 16px; }
+.accuracy-grid > div { min-height: 86px; display: flex; flex-direction: column; justify-content: center; gap: 7px; padding: 15px 16px; border: 1px solid rgba(255,255,255,.68); border-radius: 16px; background: rgba(255,255,255,.3); box-shadow: inset 0 1px 0 rgba(255,255,255,.72), 0 8px 18px rgba(52,96,113,.08); }
+.accuracy-grid strong { color: var(--ink); font: 600 27px 'Barlow Condensed'; letter-spacing: -.02em; }
+.accuracy-grid span { color: var(--muted); font: 500 12px 'Barlow Condensed'; line-height: 1.25; }
+.outcome-form { margin: 18px 0 16px; padding: 15px; border: 1px solid rgba(71,126,120,.24); border-radius: 15px; background: rgba(224,243,238,.45); }
+.outcome-fields { display: flex; align-items: end; gap: 10px; margin-top: 10px; }
+.outcome-fields label { flex: 1; color: var(--muted); font: 600 10px 'Barlow Condensed'; letter-spacing: .08em; text-transform: uppercase; }
+.outcome-fields input { display: block; width: 100%; margin-top: 6px; min-height: 38px; padding: 0 10px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.72); color: var(--ink); }
+.outcome-fields .button { min-height: 38px; white-space: nowrap; }
+.user-card { width: 100%; border: 0; color: inherit; background: transparent; text-align: left; cursor: pointer; }
+.user-card:hover { background: rgba(255,255,255,.36); border-radius: 12px; }
+html[data-theme='dark'] .accuracy-grid > div { border-color: rgba(236,247,247,.2); background: rgba(255,255,255,.06); box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 12px 24px rgba(0,0,0,.24); }
+html[data-theme='dark'] .outcome-form { border-color: rgba(124,197,182,.24); background: rgba(124,197,182,.08); }
+html[data-theme='dark'] .outcome-fields input { border-color: rgba(236,247,247,.2); background: rgba(255,255,255,.08); color: var(--ink); }
+@media (max-width: 760px) { .accuracy-grid { grid-template-columns: 1fr 1fr; } .accuracy-grid > div:last-child { grid-column: 1 / -1; } }
+@media (max-width: 520px) { .outcome-fields { flex-direction: column; align-items: stretch; } .outcome-fields .button { width: 100%; } }
+@media (max-width: 430px) { .accuracy-grid { grid-template-columns: 1fr; } .accuracy-grid > div:last-child { grid-column: auto; } }
