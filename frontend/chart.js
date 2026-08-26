@@ -4,14 +4,14 @@
   function palette(theme) {
     const dark = theme === 'dark';
     return {
-      ink: dark ? '#f3f8f8' : '#173344',
-      muted: dark ? '#a6b4b8' : '#71858b',
-      grid: dark ? 'rgba(236,247,247,.12)' : 'rgba(23,51,68,.1)',
-      coral: dark ? '#ff9d8c' : '#bd685a',
-      teal: dark ? '#7cc5b6' : '#477e78',
-      ochre: dark ? '#f0be73' : '#ca8b45',
-      green: dark ? '#99cda0' : '#73ad88',
-      surface: dark ? 'rgba(0,0,0,.44)' : 'rgba(255,255,255,.58)',
+      ink: dark ? '#F5F6FA' : '#173344',
+      muted: dark ? '#B0B2C8' : '#6D7C83',
+      grid: dark ? 'rgba(255,255,255,.14)' : 'rgba(23,51,68,.1)',
+      coral: dark ? '#7C5CFC' : '#BD685A',
+      teal: dark ? '#38E1FF' : '#477E78',
+      ochre: dark ? '#7C5CFC' : '#CA8B45',
+      green: dark ? '#38E1FF' : '#73AD88',
+      surface: dark ? 'rgba(17,18,32,.72)' : 'rgba(255,255,255,.74)',
     };
   }
 
@@ -43,7 +43,7 @@
     if (typeof Chart === 'undefined') return;
     destroyCharts();
     const p = palette(theme);
-    Chart.defaults.font.family = "'Barlow Condensed', sans-serif";
+    Chart.defaults.font.family = 'Inter, sans-serif';
     Chart.defaults.color = p.muted;
 
     const riskCounts = ['Low', 'Medium', 'High', 'Critical'].map((label) => projects.filter((project) => {

@@ -156,7 +156,11 @@ function reportModal() {
 let introTimers = [];
 
 function showIntro({ force = false } = {}) {
-  if (!force && sessionStorage.getItem('zv_intro_seen') === '1') return;
+  if (!force && sessionStorage.getItem('zv_intro_seen') === '1') {
+    document.querySelector('#initial-splash')?.remove();
+    document.body.classList.remove('intro-running', 'intro-content-reveal');
+    return;
+  }
   sessionStorage.setItem('zv_intro_seen', '1');
   introTimers.forEach((timer) => clearTimeout(timer));
   introTimers = [];
