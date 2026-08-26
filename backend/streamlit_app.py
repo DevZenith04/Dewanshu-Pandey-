@@ -300,18 +300,20 @@ header[data-testid="stHeader"] {
 # Load models (cached so they load only once)
 # ---------------------------------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(BASE_DIR)
+MODEL_DIR = os.path.join(PROJECT_ROOT, "models")
 
 
 @st.cache_resource
 def load_models():
-    clf = joblib.load(os.path.join(BASE_DIR, "risk_classifier.joblib"))
-    reg = joblib.load(os.path.join(BASE_DIR, "delay_regressor.joblib"))
+    clf = joblib.load(os.path.join(MODEL_DIR, "risk_classifier.joblib"))
+    reg = joblib.load(os.path.join(MODEL_DIR, "delay_regressor.joblib"))
 
     # Fix for XGBoost device mismatch warning
     if hasattr(reg, "steps"):
         reg.steps[-1][1].set_params(device="cpu")
 
-    le = joblib.load(os.path.join(BASE_DIR, "risk_label_encoder.joblib"))
+    le = joblib.load(os.path.join(MODEL_DIR, "risk_label_encoder.joblib"))
     return clf, reg, le
 
 

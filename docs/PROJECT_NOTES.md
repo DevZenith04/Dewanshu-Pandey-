@@ -18,7 +18,7 @@ New assessments use the FastAPI model service when it is reachable. The dashboar
 
 ## Runtime architecture
 
-The frontend is static and loads `api.js` and `config.js` before `app.js`. The backend loads the three `.joblib` artifacts from the repository root. The hackathon persistence layer uses SQLite at `zameen.db`, which is generated at runtime and intentionally ignored by Git. For production multi-user deployment, replace the SQLite adapter with a managed database.
+The frontend is static under `frontend/` and loads `frontend/api.js` and `frontend/config.js` before `frontend/app.js`. The FastAPI service lives in `backend/app.py` and loads the three `.joblib` artifacts from `models/`. The hackathon persistence layer uses `backend/zameen.db`, which is generated at runtime and intentionally ignored by Git. For production multi-user deployment, replace the SQLite adapter with a managed database.
 
 ## Shipping audit checkpoint
 

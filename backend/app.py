@@ -55,6 +55,8 @@ app.add_middleware(
 # Load models at startup
 # ---------------------------------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(BASE_DIR)
+MODEL_DIR = os.path.join(PROJECT_ROOT, "models")
 DB_PATH = os.getenv("ZAMEEN_DB_PATH", os.path.join(BASE_DIR, "zameen.db"))
 
 
@@ -67,14 +69,14 @@ def init_database():
 init_database()
 
 try:
-    risk_classifier = joblib.load(os.path.join(BASE_DIR, "risk_classifier.joblib"))
-    delay_regressor = joblib.load(os.path.join(BASE_DIR, "delay_regressor.joblib"))
+    risk_classifier = joblib.load(os.path.join(MODEL_DIR, "risk_classifier.joblib"))
+    delay_regressor = joblib.load(os.path.join(MODEL_DIR, "delay_regressor.joblib"))
     
     # Fix for XGBoost device mismatch warning
     if hasattr(delay_regressor, "steps"):
         delay_regressor.steps[-1][1].set_params(device="cpu")
         
-    label_encoder = joblib.load(os.path.join(BASE_DIR, "risk_label_encoder.joblib"))
+    label_encoder = joblib.load(os.path.join(MODEL_DIR, "risk_label_encoder.joblib"))
     MODELS_LOADED = True
 except Exception as e:
     print(f"Warning: Could not load models: {e}")
