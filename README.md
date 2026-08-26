@@ -34,23 +34,14 @@ Check the service at [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health
 
 ### 2. Point the frontend at the backend
 
-`config.js` defaults to:
+In local development, `config.js` automatically points to `http://127.0.0.1:8000`. On a static deployment, define `window.ZAMEEN_DEPLOYED_API_URL` before `config.js` or replace the empty deployed value with the exact public FastAPI origin, without a trailing slash:
 
-```js
-window.ZAMEEN_CONFIG = {
-  API_BASE_URL: 'http://127.0.0.1:8000',
-};
+```html
+<script>window.ZAMEEN_DEPLOYED_API_URL = 'https://your-landguard-api.onrender.com';</script>
+<script src="config.js"></script>
 ```
 
-For a deployed service, replace the value with the public FastAPI URL, for example:
-
-```js
-window.ZAMEEN_CONFIG = {
-  API_BASE_URL: 'https://your-landguard-api.onrender.com',
-};
-```
-
-The browser also accepts a saved value from `localStorage` under `zv_api_base_url` when `API_BASE_URL` is not supplied.
+The browser also accepts a saved value from `localStorage` under `zv_api_base_url`. The topbar now exposes `ML API online`, `Checking ML API`, or `ML API offline` so a CORS or deployment problem is visible before a demo prediction is submitted.
 
 ### 3. Serve the static frontend
 

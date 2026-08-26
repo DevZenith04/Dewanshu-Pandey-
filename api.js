@@ -91,6 +91,19 @@
     }
   }
 
+  async function healthCheck() {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+    try {
+      const response = await fetch(endpoint('/health'), { signal: controller.signal });
+      return { ok: response.ok, ...(response.ok ? await response.json() : {}) };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
   async function loadFeatures() {
     try {
       const response = await fetch(endpoint('/api/features'));
@@ -114,6 +127,6 @@
     return Math.round(clamp(weighted, 0, 100));
   }
 
-  window.ZameenApi = { defaults, get options() { return options; }, endpoint: configuredBase, buildPayload, fallbackPrediction, predict, assess, loadAssessments, loadFeatures, riskScore };
+  window.ZameenApi = { defaults, get options() { return options; }, endpoint: configuredBase, buildPayload, fallbackPrediction, predict, assess, loadAssessments, loadFeatures, healthCheck, riskScore };
   loadFeatures();
 })();
