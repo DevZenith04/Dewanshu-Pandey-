@@ -687,3 +687,102 @@ html[data-theme='dark'] .intro-kicker {
   .intro-kicker { min-height: 32px; padding-inline: 11px; font-size: 11px; letter-spacing: .12em; }
   .intro-kicker::before, .intro-kicker::after { width: 14px; flex-basis: 14px; }
 }
+
+/* User-provided glass-card recipe, adapted to the existing responsive surfaces. */
+.glass-card,
+.panel,
+.metric-card,
+.archive-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .3);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, .12);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, .1),
+    inset 0 1px 0 rgba(255, 255, 255, .5),
+    inset 0 -1px 0 rgba(255, 255, 255, .1),
+    inset 0 0 34px 17px rgba(255, 255, 255, .17);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.glass-card::before,
+.panel::before,
+.metric-card::before,
+.archive-card::before {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .8), transparent);
+}
+.glass-card::after,
+.panel::after,
+.metric-card::after,
+.archive-card::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 100%;
+  pointer-events: none;
+  border: 0;
+  opacity: 1;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .8), transparent, rgba(255, 255, 255, .3));
+  mask-image: none;
+}
+.metric-card { border-top-width: 3px; }
+.map-panel,
+.chart-wrap {
+  border-color: rgba(255, 255, 255, .3);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, .12);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, .1),
+    inset 0 1px 0 rgba(255, 255, 255, .5),
+    inset 0 -1px 0 rgba(255, 255, 255, .1),
+    inset 0 0 34px 17px rgba(255, 255, 255, .12);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+html[data-theme='dark'] .glass-card,
+html[data-theme='dark'] .panel,
+html[data-theme='dark'] .metric-card,
+html[data-theme='dark'] .archive-card {
+  border-color: rgba(255, 255, 255, .22);
+  background: rgba(255, 255, 255, .08);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, .42),
+    inset 0 1px 0 rgba(255, 255, 255, .2),
+    inset 0 -1px 0 rgba(255, 255, 255, .06),
+    inset 0 0 34px 17px rgba(255, 255, 255, .06);
+}
+html[data-theme='dark'] .glass-card::before,
+html[data-theme='dark'] .panel::before,
+html[data-theme='dark'] .metric-card::before,
+html[data-theme='dark'] .archive-card::before,
+html[data-theme='dark'] .glass-card::after,
+html[data-theme='dark'] .panel::after,
+html[data-theme='dark'] .metric-card::after,
+html[data-theme='dark'] .archive-card::after {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .34), transparent, rgba(255, 255, 255, .12));
+}
+html[data-theme='dark'] .map-panel,
+html[data-theme='dark'] .chart-wrap {
+  border-color: rgba(255, 255, 255, .22);
+  background: rgba(255, 255, 255, .07);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, .42),
+    inset 0 1px 0 rgba(255, 255, 255, .2),
+    inset 0 -1px 0 rgba(255, 255, 255, .06),
+    inset 0 0 34px 17px rgba(255, 255, 255, .04);
+}
+@media (max-width: 760px) {
+  .glass-card, .panel, .metric-card, .archive-card { border-radius: 18px; }
+}
