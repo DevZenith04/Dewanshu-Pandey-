@@ -41,7 +41,7 @@ In local development, `config.js` automatically points to `http://127.0.0.1:8000
 <script src="config.js"></script>
 ```
 
-The browser also accepts a saved value from `localStorage` under `zv_api_base_url`. The topbar now exposes `ML API online`, `Checking ML API`, or `ML API offline` so a CORS or deployment problem is visible before a demo prediction is submitted.
+The browser also accepts a saved value from `localStorage` under `zv_api_base_url`. The shipped GitHub Pages entrypoint sets `window.ZAMEEN_DEPLOYED_API_URL` to the Render API origin before loading `config.js`, so production predictions do not fall through to the Pages origin. The topbar exposes `ML API online`, `Checking ML API`, or `ML API offline` so a CORS or deployment problem is visible before a demo prediction is submitted.
 
 ### 3. Serve the static frontend
 
@@ -66,11 +66,11 @@ POST /api/assessments       predict and persist a new assessment
 
 The `POST /api/assessments` route returns the prediction and the saved record in one response, which keeps the demo flow fast and easy to explain. The database path can be changed with `ZAMEEN_DB_PATH`; the default is `backend/zameen.db` beside `backend/app.py`. **Warning: the SQLite assessments table is wiped on every Render redeploy unless a persistent disk is attached.** For a multi-user production deployment, replace this SQLite adapter with PostgreSQL or another managed database.
 
-On a successful API response, the dashboard stores the returned risk category, delay probability, and risk-probability breakdown. The displayed risk score is a weighted score derived from the model probabilities. If the backend is unavailable, the project is still saved using a clearly marked local fallback estimate so the dashboard remains usable.
+On a successful API response, the dashboard stores the returned risk category, delay probability, risk-probability breakdown, and grouped global model feature importances from the trained pipeline. These are displayed as model feature importance signals, not fabricated per-case SHAP explanations. The displayed risk score is a weighted score derived from the model probabilities. If the backend is unavailable, the project is still saved using a clearly marked local fallback estimate so the dashboard remains usable.
 
 ## Deploy with Render
 
-The included `render.yaml` can deploy the FastAPI service and the optional Streamlit service from this repository. In the Render dashboard, create a new Blueprint from the `DevZenith04/Dewanshu-Pandey-` repository. Set the `FRONTEND_ORIGINS` environment variable on the API service to the exact deployed frontend origin(s), separated by commas, before shipping. After the API service is live, set `window.ZAMEEN_DEPLOYED_API_URL` in `frontend/index.html` before hosting the static frontend.
+The included `render.yaml` can deploy the FastAPI service and the optional Streamlit service from this repository. Both services use Python 3.12.8, which is required by the current NumPy and XGBoost pins. In the Render dashboard, create a new Blueprint from the `DevZenith04/Dewanshu-Pandey-` repository. Set the `FRONTEND_ORIGINS` environment variable on the API service to the exact deployed frontend origin(s), separated by commas, before shipping. After the API service is live, set `window.ZAMEEN_DEPLOYED_API_URL` in `frontend/index.html` before hosting the static frontend.
 
 The static dashboard has no build step. The repository includes `.github/workflows/deploy-pages.yml`, which publishes only `frontend/` to GitHub Pages on every push to `main`; the backend, models, and documentation are not used as the Pages site root. After the workflow completes, the site is normally available at `https://devzenith04.github.io/Dewanshu-Pandey-/`. If Pages has not been enabled for the repository yet, open repository **Settings → Pages**, choose **GitHub Actions** as the source, and rerun the workflow. Because the browser calls the API directly, the backend must allow the static site’s origin through CORS. Set `FRONTEND_ORIGINS` to the exact deployed origin(s); the API no longer permits every origin by default.
 
@@ -88,6 +88,6 @@ The vanilla dashboard and FastAPI API are the primary integrated experience in t
 
 ## Demo security and model feedback loop
 
-The backend includes a deliberately small, transparent demo-account system for the hackathon. `POST /api/login` accepts `state-admin`, `district-officer`, or `reviewer` and returns a bearer session token with role permissions. The dashboard signs in as the selected demo account automatically; click the sidebar account card to cycle accounts and demonstrate role-gated behavior.
+The backend includes a deliberately small, transparent demo-account system for the hackathon. `POST /api/login` accepts `state-admin`, `district-officer`, or `reviewer` and returns a bearer session token with role permissions. The dashboard signs in as the selected demo account automatically; click the sidebar account card to cycle accounts and demonstrate role-gated behavior. If a long-running demo crosses a backend restart and receives a 401, authenticated requests automatically re-login once and retry.
 
 Assessment records now include `created_by`, nullable `actual_delay_days`, and nullable `actual_completed_at` fields. A permitted account can record the eventual outcome through `PATCH /api/assessments/{id}/outcome`. `GET /api/monitoring/accuracy` compares predicted delay days against recorded actual delay days, and `GET /api/audit-log` lists authenticated assessment actions with actor and timestamp. This is a hackathon demonstration layer, not production IAM; production deployment should replace the in-memory tokens with an external identity provider and durable audit infrastructure.

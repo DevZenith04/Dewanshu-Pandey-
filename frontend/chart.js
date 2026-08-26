@@ -12,6 +12,7 @@
       ochre: dark ? '#7C5CFC' : '#CA8B45',
       green: dark ? '#38E1FF' : '#73AD88',
       surface: dark ? 'rgba(17,18,32,.72)' : 'rgba(255,255,255,.74)',
+      area: dark ? 'rgba(124,92,252,.18)' : 'rgba(189,104,90,.15)',
     };
   }
 
@@ -80,7 +81,7 @@
     const delayCanvas = document.querySelector('#delay-exposure-chart');
     if (delayCanvas) instances.push(new Chart(delayCanvas, {
       type: 'line',
-      data: { labels: delayProjects.map((project) => project.id), datasets: [{ label: 'Delay likelihood', data: delayProjects.map((project) => project.likelihoodPercent || 0), borderColor: p.coral, backgroundColor: p.coral, pointBackgroundColor: p.ochre, pointBorderColor: p.surface, pointBorderWidth: 3, pointRadius: 5, tension: .35, fill: true }] },
+      data: { labels: delayProjects.map((project) => project.id), datasets: [{ label: 'Delay likelihood', data: delayProjects.map((project) => project.likelihoodPercent || 0), borderColor: p.coral, backgroundColor: p.area, pointBackgroundColor: p.ochre, pointBorderColor: p.surface, pointBorderWidth: 3, pointRadius: 5, tension: .35, fill: true }] },
       options: { ...baseOptions(p), plugins: { ...baseOptions(p).plugins, legend: { display: false }, tooltip: { callbacks: { label: (context) => ` ${context.raw}% delay likelihood` } } }, scales: { x: { grid: { display: false }, ticks: { color: p.muted, maxRotation: 0 } }, y: { min: 0, max: 100, ticks: { color: p.muted, callback: (value) => `${value}%` }, grid: { color: p.grid } } } },
     }));
   }

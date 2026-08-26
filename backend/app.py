@@ -174,6 +174,7 @@ class PredictionResponse(BaseModel):
     risk_category: str
     delay_probability: float
     risk_probabilities: dict
+    model_feature_importances: list[dict] = []
 
 
 class AssessmentCreate(BaseModel):
@@ -259,6 +260,57 @@ Format your response as a numbered list (1. 2. 3. 4. 5.). Each recommendation sh
 
 
 # ---------------------------------------------------------------------------
+# Explainability helpers
+# ---------------------------------------------------------------------------
+FEATURE_LABELS = {
+    "land_area_hectares": "Land area",
+    "affected_families": "Affected families",
+    "compensation_disbursed_pct": "Compensation disbursed",
+    "days_since_notification": "Notification age",
+    "legal_disputes_count": "Legal dispute count",
+    "rehabilitation_progress_pct": "Rehabilitation progress",
+    "stakeholder_responsiveness_score": "Stakeholder responsiveness",
+    "historical_district_delay_rate": "Historical district delay rate",
+    "planned_duration_days": "Planned duration",
+    "project_age_days": "Project age",
+    "state": "State",
+    "district": "District",
+    "project_type": "Project type",
+    "compensation_status": "Compensation status",
+    "approval_stage": "Approval stage",
+    "legal_dispute_status": "Legal dispute status",
+    "possession_status": "Possession status",
+    "inter_department_coordination_issues": "Inter-department coordination",
+}
+
+
+def model_feature_importances() -> list[dict]:
+    """Return global, model-derived feature importance grouped by source field.
+
+    This is intentionally labeled as feature importance rather than local SHAP
+    contribution: the shipped pipeline contains feature_importances_ but does
+    not ship a SHAP explainer artifact.
+    """
+    try:
+        prep = risk_classifier.named_steps["prep"]
+        model = risk_classifier.named_steps["model"]
+        names = prep.get_feature_names_out()
+        scores = model.feature_importances_
+        grouped = {column: 0.0 for column in NUMERIC_COLS + CATEGORICAL_COLS}
+        for name, score in zip(names, scores):
+            transformed = str(name).split("__", 1)[-1]
+            for column in grouped:
+                if transformed == column or transformed.startswith(f"{column}_"):
+                    grouped[column] += float(score)
+                    break
+        ranked = sorted(grouped.items(), key=lambda item: item[1], reverse=True)
+        total = sum(value for _, value in ranked) or 1.0
+        return [{"feature": FEATURE_LABELS.get(name, name.replace("_", " ").title()), "importance": round(value / total, 4)} for name, value in ranked[:5] if value > 0]
+    except Exception:
+        return []
+
+
+# ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
 @app.get("/health")
@@ -317,6 +369,7 @@ async def predict(project: ProjectInput):
             risk_category=risk_label,
             delay_probability=round(delay, 4),
             risk_probabilities=probs,
+            model_feature_importances=model_feature_importances(),
         )
     except Exception as e:
         raise HTTPException(500, f"Prediction failed: {e}")

@@ -17,6 +17,13 @@
   let sessionToken = localStorage.getItem('zv_session_token') || '';
   let currentUser = JSON.parse(localStorage.getItem('zv_session_user') || 'null');
   const authHeaders = () => sessionToken ? { Authorization: `Bearer ${sessionToken}` } : {};
+  async function authenticatedFetch(path, init = {}, retry = true) {
+    const response = await fetch(endpoint(path), { ...init, headers: { ...(init.headers || {}), ...authHeaders() } });
+    if (response.status === 401 && retry) {
+      try { await login(); return authenticatedFetch(path, init, false); } catch (error) { return response; }
+    }
+    return response;
+  }
 
   async function login(accountId = localStorage.getItem('zv_demo_account') || 'state-admin') {
     const response = await fetch(endpoint('/api/login'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ account_id: accountId }) });
@@ -86,7 +93,7 @@
 
   async function assess(projectName, payload) {
     try {
-      const response = await fetch(endpoint('/api/assessments'), { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ project_name: projectName, project: payload }) });
+      const response = await authenticatedFetch('/api/assessments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ project_name: projectName, project: payload }) });
       if (!response.ok) throw new Error(`Assessment API returned ${response.status}`);
       return { ...(await response.json()), source: 'ml', persisted: true };
     } catch (assessmentError) {
@@ -97,7 +104,7 @@
 
   async function loadAssessments() {
     try {
-      const response = await fetch(endpoint('/api/assessments?limit=50'), { headers: authHeaders() });
+      const response = await authenticatedFetch('/api/assessments?limit=50');
       if (!response.ok) return [];
       return await response.json();
     } catch (error) {
@@ -106,17 +113,17 @@
   }
 
   async function updateOutcome(id, actualDelayDays, actualCompletedAt = null) {
-    const response = await fetch(endpoint(`/api/assessments/${id}/outcome`), { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ actual_delay_days: Number(actualDelayDays), actual_completed_at: actualCompletedAt }) });
+    const response = await authenticatedFetch(`/api/assessments/${id}/outcome`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ actual_delay_days: Number(actualDelayDays), actual_completed_at: actualCompletedAt }) });
     if (!response.ok) throw new Error(`Outcome API returned ${response.status}`);
     return response.json();
   }
 
   async function loadAccuracy() {
-    try { const response = await fetch(endpoint('/api/monitoring/accuracy'), { headers: authHeaders() }); return response.ok ? response.json() : { resolved_cases: 0, cases: [] }; } catch (error) { return { resolved_cases: 0, cases: [], error: error.message }; }
+    try { const response = await authenticatedFetch('/api/monitoring/accuracy'); return response.ok ? response.json() : { resolved_cases: 0, cases: [] }; } catch (error) { return { resolved_cases: 0, cases: [], error: error.message }; }
   }
 
   async function loadAuditLog() {
-    try { const response = await fetch(endpoint('/api/audit-log'), { headers: authHeaders() }); return response.ok ? response.json() : []; } catch (error) { return []; }
+    try { const response = await authenticatedFetch('/api/audit-log'); return response.ok ? response.json() : []; } catch (error) { return []; }
   }
 
   async function healthCheck() {
