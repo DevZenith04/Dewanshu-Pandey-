@@ -786,3 +786,113 @@ html[data-theme='dark'] .chart-wrap {
 @media (max-width: 760px) {
   .glass-card, .panel, .metric-card, .archive-card { border-radius: 18px; }
 }
+
+/* Card/background separation polish */
+body {
+  background:
+    radial-gradient(circle at 6% 8%, rgba(239,170,156,.22), transparent 24%),
+    radial-gradient(circle at 96% 14%, rgba(169,216,205,.28), transparent 28%),
+    radial-gradient(circle at 50% 100%, rgba(217,237,247,.5), transparent 40%),
+    #dcecf2;
+}
+.app-shell {
+  background:
+    linear-gradient(135deg, rgba(225,241,246,.86), rgba(248,251,253,.45) 48%, rgba(214,234,241,.88)),
+    radial-gradient(circle at 50% 8%, rgba(255,255,255,.7), transparent 36%);
+}
+.sidebar {
+  border-right-color: rgba(255,255,255,.95);
+  box-shadow: inset -1px 0 0 rgba(71,126,120,.1), 20px 0 54px rgba(42,88,108,.14);
+}
+.topbar {
+  border-bottom-color: rgba(255,255,255,.96);
+  box-shadow: 0 14px 36px rgba(42,88,108,.12), inset 0 -1px 0 rgba(71,126,120,.1);
+}
+.panel,
+.metric-card,
+.archive-card,
+.signal-strip {
+  border-color: rgba(255,255,255,.92);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.8),
+    0 8px 18px rgba(42,88,108,.08),
+    0 24px 58px rgba(42,88,108,.16),
+    inset 0 1px 0 rgba(255,255,255,.98),
+    inset 0 -1px 0 rgba(71,126,120,.08);
+}
+.panel::before,
+.metric-card::before,
+.archive-card::before {
+  background: linear-gradient(115deg, rgba(255,255,255,.58), transparent 32%, transparent 69%, rgba(169,216,205,.13));
+}
+.panel::after,
+.metric-card::after,
+.archive-card::after {
+  box-shadow: 8px 0 22px rgba(255,255,255,.22);
+}
+.map-panel,
+.chart-wrap {
+  border-color: rgba(255,255,255,.82);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.74),
+    0 12px 28px rgba(42,88,108,.12),
+    inset 0 1px 0 rgba(255,255,255,.9),
+    inset 0 -1px 0 rgba(71,126,120,.08);
+}
+.metric-icon,
+.priority-score,
+.status-mark,
+.map-legend,
+.trend-summary,
+.panel-foot,
+.insight-callout,
+.registry-note {
+  border: 1px solid rgba(255,255,255,.74);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.88), 0 8px 20px rgba(42,88,108,.1);
+}
+html[data-theme='dark'] body {
+  background:
+    radial-gradient(circle at 7% 5%, rgba(124,197,182,.16), transparent 23%),
+    radial-gradient(circle at 94% 14%, rgba(242,155,139,.14), transparent 26%),
+    radial-gradient(circle at 50% 100%, rgba(47,77,73,.2), transparent 38%),
+    #020304;
+}
+html[data-theme='dark'] .app-shell {
+  background:
+    linear-gradient(135deg, rgba(4,6,7,.96), rgba(14,19,20,.84) 48%, rgba(3,4,5,.98)),
+    radial-gradient(circle at 50% 8%, rgba(255,255,255,.06), transparent 36%);
+}
+html[data-theme='dark'] .sidebar {
+  border-right-color: rgba(236,247,247,.22);
+  box-shadow: inset -1px 0 0 rgba(255,255,255,.06), 20px 0 58px rgba(0,0,0,.48);
+}
+html[data-theme='dark'] .topbar {
+  border-bottom-color: rgba(236,247,247,.2);
+  box-shadow: 0 14px 36px rgba(0,0,0,.36), inset 0 -1px 0 rgba(236,247,247,.12);
+}
+html[data-theme='dark'] .panel,
+html[data-theme='dark'] .metric-card,
+html[data-theme='dark'] .archive-card,
+html[data-theme='dark'] .signal-strip {
+  border-color: rgba(236,247,247,.24);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.12),
+    0 8px 18px rgba(0,0,0,.3),
+    0 26px 64px rgba(0,0,0,.58),
+    inset 0 1px 0 rgba(255,255,255,.18),
+    inset 0 -1px 0 rgba(124,197,182,.08);
+}
+html[data-theme='dark'] .panel::after,
+html[data-theme='dark'] .metric-card::after,
+html[data-theme='dark'] .archive-card::after {
+  box-shadow: 8px 0 22px rgba(255,255,255,.08);
+}
+html[data-theme='dark'] .map-panel,
+html[data-theme='dark'] .chart-wrap {
+  border-color: rgba(236,247,247,.22);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.1),
+    0 12px 30px rgba(0,0,0,.34),
+    inset 0 1px 0 rgba(255,255,255,.16),
+    inset 0 -1px 0 rgba(124,197,182,.08);
+}
