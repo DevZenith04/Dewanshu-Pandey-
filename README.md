@@ -72,7 +72,7 @@ On a successful API response, the dashboard stores the returned risk category, d
 
 The included `render.yaml` can deploy the FastAPI service and the optional Streamlit service from this repository. In the Render dashboard, create a new Blueprint from the `DevZenith04/Dewanshu-Pandey-` repository. Set the `FRONTEND_ORIGINS` environment variable on the API service to the exact deployed frontend origin(s), separated by commas, before shipping. After the API service is live, set `window.ZAMEEN_DEPLOYED_API_URL` in `frontend/index.html` before hosting the static frontend.
 
-The static dashboard has no build step. It can be served by any static host, including GitHub Pages, Netlify, Vercel static hosting, or an object-storage website endpoint. Because the browser calls the API directly, the backend must allow the static site’s origin through CORS. Set `FRONTEND_ORIGINS` to the exact deployed origin(s); the API no longer permits every origin by default.
+The static dashboard has no build step. The repository includes `.github/workflows/deploy-pages.yml`, which publishes only `frontend/` to GitHub Pages on every push to `main`; the backend, models, and documentation are not used as the Pages site root. After the workflow completes, the site is normally available at `https://devzenith04.github.io/Dewanshu-Pandey-/`. If Pages has not been enabled for the repository yet, open repository **Settings → Pages**, choose **GitHub Actions** as the source, and rerun the workflow. Because the browser calls the API directly, the backend must allow the static site’s origin through CORS. Set `FRONTEND_ORIGINS` to the exact deployed origin(s); the API no longer permits every origin by default.
 
 ## Legacy/optional Streamlit UI
 
