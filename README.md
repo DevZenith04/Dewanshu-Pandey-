@@ -1,6 +1,12 @@
 # Zameen Vivaad AI
 
-Zameen Vivaad AI is a land-acquisition dispute and delay-risk dashboard for India. This repository now contains both halves of the application: the framework-free vanilla dashboard and the FastAPI ML service with its trained model artifacts.
+**Zameen Vivaad AI is a decision surface for land-acquisition teams.** It helps reviewers spot the files most likely to stall, understand the operational drivers behind that risk, and move from a national portfolio view to a parcel-level decision without losing the audit trail.
+
+This is a hackathon-ready product demo, not a static mockup. The vanilla JavaScript dashboard calls a FastAPI service backed by trained risk-classification and delay-regression models, stores assessments and eventual outcomes, exposes model-derived feature importance, and keeps a clearly labeled local estimate available when the API is offline. The demo account switcher intentionally makes the RBAC and audit-log story visible instead of hiding it behind a fake login screen.
+
+## What to show in the demo
+
+Start with **Overview** to frame the national pulse, then open **Project desk** to filter active files, use **Risk studio** to explain the model signals, and finish with **Parcel registry** or the outcome feedback loop. The interface is deliberately compact: one visual language, two content typefaces, interactive charts, and explicit online/offline status so the audience can tell what is model-backed.
 
 ## Repository layout
 
