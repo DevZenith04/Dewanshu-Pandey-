@@ -24,3 +24,7 @@ The first design-token pass was too subtle because the source stylesheet already
 ## Live visual check
 
 The live Overview dashboard was reviewed after the design-language layer was applied. The existing near-black page, coral/teal/ochre risk palette, sidebar, topbar, four-card metric row, morning brief, two-column chart grid, map/priority sections, and current project history remain present. Cards now read as distinct glass planes through the inner highlight, border, blur, and ambient shadow treatment; the charts continue to render in their existing positions.
+
+## Glassmorphism System v1 alignment
+
+The newest attached specification is now the active frontend design contract. The live cascade defines its `bg0/bg1/bg2`, purple/cyan accent gradient, glass fills and borders, 20px surface blur with 160% saturation, inset highlights, surface ambient shadows, Space Grotesk/Inter/JetBrains Mono typography, and the five explicit interaction states. Primary, secondary, and icon controls use the specification’s 220ms hover and 100ms press timing, independent focus ring, disabled opacity, and glass-surface highlight rules. This newest reference supersedes the earlier preserved-palette mapping where the two specifications conflicted.
