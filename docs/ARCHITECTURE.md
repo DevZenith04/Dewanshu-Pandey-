@@ -10,8 +10,14 @@ Zameen Vivaad AI is a small, deployable product composed of a framework-free bro
 | Browser API client | `frontend/api.js` | Backend URL selection, valid category normalization, payload defaults, prediction calls, persistence calls, feature loading, and fallback estimates. |
 | Runtime config | `frontend/config.js` | Local or deployed FastAPI base URL. Browser `localStorage` can override it with `zv_api_base_url`. |
 | Charts | `frontend/chart.js` | Chart.js lifecycle, theme-aware colors, and analytics visualizations. |
-| FastAPI service | `backend/app.py` | Model loading, `/api/features`, `/api/predict`, `/api/assessments`, `/api/recommend`, and `/health`. |
-| Model assets | `models/*.joblib` | Risk classifier, delay regressor, and risk-label encoder loaded by `backend/app.py`. |
+| FastAPI composition root | `backend/app.py` | CORS wiring, dependency composition, and backward-compatible HTTP route orchestration. |
+| Runtime configuration | `backend/core/config.py` | Typed environment-backed settings for paths, CORS, and optional recommendation-provider limits. |
+| Domain contract | `backend/core/domain.py` | Valid categories, model field order, feature labels, and Pydantic request/response schemas. |
+| Persistence adapter | `backend/infrastructure/database.py` | SQLite schema migration, assessment storage, audit events, and monitoring metric calculations. |
+| Authentication service | `backend/services/authentication.py` | Demo-account token issuance, account metadata, and permission checks; replaceable with real identity later. |
+| Model service | `backend/services/model_service.py` | Model artifact loading, dataframe preparation, inference, and model-derived feature importance. |
+| Recommendation service | `backend/services/recommendation_service.py` | Groq prompt construction, provider invocation, output normalization, and explicit provider failures. |
+| Model assets | `models/*.joblib` | Risk classifier, delay regressor, and risk-label encoder loaded by `ModelService`. |
 | Persistence | `backend/zameen.db` | SQLite assessment records created at runtime and ignored by Git. |
 | Optional secondary UI | `backend/streamlit_app.py` | Legacy/optional Streamlit interface using the shared model assets and backend feature contract. |
 
@@ -27,4 +33,4 @@ The Home splash runs for exactly five seconds on initial page load and each expl
 
 ## Deployment boundary
 
-The FastAPI service is deployed from `backend/app.py` using the root `render.yaml`. `FRONTEND_ORIGINS` must contain the exact deployed static frontend origin(s), separated by commas; local defaults are limited to `http://127.0.0.1:8123` and `http://localhost:8123`. The static `frontend/` directory can be hosted independently because it has no build step. The current SQLite adapter is suitable for a hackathon demo, but a managed database is required for durable multi-user production data.
+The FastAPI service is deployed from `backend/app.py` using the root `render.yaml`; it can also be started locally with `uvicorn backend.app:app --reload`. `FRONTEND_ORIGINS` must contain the exact deployed static frontend origin(s), separated by commas; local defaults are limited to `http://127.0.0.1:8123` and `http://localhost:8123`. The static `frontend/` directory can be hosted independently because it has no build step. The current SQLite adapter is suitable for a hackathon demo, but a managed database is required for durable multi-user production data.

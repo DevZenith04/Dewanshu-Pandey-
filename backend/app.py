@@ -1,37 +1,75 @@
-"""
-LandGuard — FastAPI backend for Land Acquisition Delay Prediction.
+"""LandGuard FastAPI composition root.
 
-Endpoints:
-  GET  /docs           → Swagger UI (interactive API docs)
-  GET  /redoc          → ReDoc (API docs)
-  GET  /health         → Health check
-  POST /api/predict    → Predict risk & delay
-  GET  /api/assessments → List saved assessments
-  POST /api/assessments → Predict and persist an assessment
-  GET  /api/features   → List input features & valid options
-  POST /api/recommend  → Get AI-generated recommendations to reduce land dispute
+This module owns only HTTP concerns: application construction, CORS wiring, and
+route orchestration. Domain contracts live in ``core.domain``; configuration in
+``core.config``; persistence in ``infrastructure.database``; and model,
+authentication, and recommendation behavior in ``services``. That separation
+keeps the public API backward-compatible while localizing future changes such
+as a managed database, real identity provider, or model version.
 """
 
-import os
-import json
-import sqlite3
-import secrets
+from __future__ import annotations
+
 from datetime import datetime, timezone
-import joblib
-import numpy as np
-import pandas as pd
-from fastapi import FastAPI, HTTPException, Header
+from typing import Any
+
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
-from typing import Optional
-from dotenv import load_dotenv
-from groq import Groq   
 
-load_dotenv()
+try:  # Supports both `uvicorn backend.app:app` and Render's app-dir command.
+    from backend.core.config import settings
+    from backend.core.domain import (
+        AssessmentCreate,
+        CATEGORICAL_COLS,
+        NUMERIC_COLS,
+        PredictionResponse,
+        ProjectInput,
+        RecommendRequest,
+        RecommendResponse,
+        OutcomeUpdate,
+        LoginRequest,
+        VALID_VALUES,
+    )
+    from backend.infrastructure.database import (
+        calculate_accuracy,
+        initialize_database,
+        insert_assessment,
+        insert_audit_event,
+        list_assessments as fetch_assessments,
+        list_audit_events,
+        update_assessment_outcome,
+    )
+    from backend.services.authentication import authenticate, issue_session, public_accounts
+    from backend.services.model_service import ModelService
+    from backend.services.recommendation_service import RecommendationService
+except ModuleNotFoundError:  # pragma: no cover - direct `cd backend && uvicorn app:app`
+    from core.config import settings
+    from core.domain import (
+        AssessmentCreate,
+        CATEGORICAL_COLS,
+        NUMERIC_COLS,
+        PredictionResponse,
+        ProjectInput,
+        RecommendRequest,
+        RecommendResponse,
+        OutcomeUpdate,
+        LoginRequest,
+        VALID_VALUES,
+    )
+    from infrastructure.database import (
+        calculate_accuracy,
+        initialize_database,
+        insert_assessment,
+        insert_audit_event,
+        list_assessments as fetch_assessments,
+        list_audit_events,
+        update_assessment_outcome,
+    )
+    from services.authentication import authenticate, issue_session, public_accounts
+    from services.model_service import ModelService
+    from services.recommendation_service import RecommendationService
 
-# ---------------------------------------------------------------------------
-# App
-# ---------------------------------------------------------------------------
+
 app = FastAPI(
     title="LandGuard — Land Acquisition Delay Predictor",
     description=(
@@ -41,438 +79,107 @@ app = FastAPI(
     ),
     version="1.0.0",
 )
-
-FRONTEND_ORIGINS = [origin.strip() for origin in os.getenv("FRONTEND_ORIGINS", "http://127.0.0.1:8123,http://localhost:8123").split(",") if origin.strip()]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=FRONTEND_ORIGINS,
+    allow_origins=list(settings.frontend_origins),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ---------------------------------------------------------------------------
-# Load models at startup
-# ---------------------------------------------------------------------------
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.dirname(BASE_DIR)
-MODEL_DIR = os.path.join(PROJECT_ROOT, "models")
-DB_PATH = os.getenv("ZAMEEN_DB_PATH", os.path.join(BASE_DIR, "zameen.db"))
+initialize_database(settings.database_path)
+model_service = ModelService(settings.model_dir)
+recommendation_service = RecommendationService(settings)
 
 
-def init_database():
-    with sqlite3.connect(DB_PATH) as connection:
-        connection.execute("CREATE TABLE IF NOT EXISTS assessments (id INTEGER PRIMARY KEY AUTOINCREMENT, project_name TEXT NOT NULL, payload_json TEXT NOT NULL, prediction_json TEXT NOT NULL, created_at TEXT NOT NULL)")
-        columns = {row[1] for row in connection.execute("PRAGMA table_info(assessments)").fetchall()}
-        for name, definition in {
-            "created_by": "TEXT NOT NULL DEFAULT 'demo-state-admin'",
-            "actual_delay_days": "INTEGER",
-            "actual_completed_at": "TEXT",
-        }.items():
-            if name not in columns:
-                connection.execute(f"ALTER TABLE assessments ADD COLUMN {name} {definition}")
-        connection.execute("CREATE TABLE IF NOT EXISTS audit_log (id INTEGER PRIMARY KEY AUTOINCREMENT, actor_id TEXT NOT NULL, actor_name TEXT NOT NULL, actor_role TEXT NOT NULL, action TEXT NOT NULL, resource_type TEXT NOT NULL, resource_id TEXT, created_at TEXT NOT NULL)")
-        connection.commit()
-
-
-init_database()
-
-try:
-    risk_classifier = joblib.load(os.path.join(MODEL_DIR, "risk_classifier.joblib"))
-    delay_regressor = joblib.load(os.path.join(MODEL_DIR, "delay_regressor.joblib"))
-    
-    # Fix for XGBoost device mismatch warning
-    if hasattr(delay_regressor, "steps"):
-        delay_regressor.steps[-1][1].set_params(device="cpu")
-        
-    label_encoder = joblib.load(os.path.join(MODEL_DIR, "risk_label_encoder.joblib"))
-    MODELS_LOADED = True
-except Exception as e:
-    print(f"Warning: Could not load models: {e}")
-    risk_classifier = delay_regressor = label_encoder = None
-    MODELS_LOADED = False
-
-# ---------------------------------------------------------------------------
-# Valid categorical values
-# ---------------------------------------------------------------------------
-VALID_VALUES = {
-    "state": ["Bihar", "Gujarat", "Karnataka", "Madhya Pradesh", "Maharashtra",
-              "Odisha", "Rajasthan", "Tamil Nadu", "Uttar Pradesh", "West Bengal"],
-    "district": ["Ahmedabad", "Aurangabad", "Bengaluru", "Bhopal", "Bhubaneswar",
-                 "Chennai", "Coimbatore", "Cuttack", "Gaya", "Ghaziabad", "Gwalior",
-                 "Howrah", "Hubballi", "Indore", "Jabalpur", "Jaipur", "Jodhpur",
-                 "Kanpur", "Kolkata", "Kota", "Lucknow", "Madurai", "Meerut",
-                 "Muzaffarpur", "Mysuru", "Nagpur", "Nashik", "Noida", "Patna",
-                 "Pune", "Rajkot", "Rourkela", "Siliguri", "Surat", "Thane",
-                 "Udaipur", "Vadodara", "Varanasi"],
-    "project_type": ["Airport Expansion", "Dam/Reservoir", "Industrial Corridor",
-                     "Irrigation Canal", "National Highway", "Power Transmission Line",
-                     "Railway Line", "SEZ Development", "State Highway", "Urban Metro"],
-    "compensation_status": ["Fully Disbursed", "Not Disbursed", "Partially Disbursed"],
-    "approval_stage": ["Award Declared", "Notification (Sec 11)", "Possession Complete",
-                       "Possession Initiated", "Rehabilitation Ongoing", "SIA Completed"],
-    "legal_dispute_status": ["Ongoing - High Court", "Ongoing - Lower Court",
-                             "Ongoing - Supreme Court", "Resolved Against", "Resolved in Favor"],
-    "possession_status": ["Fully Complete", "Not Started", "Partially Complete"],
-    "inter_department_coordination_issues": ["High", "Low", "Medium"],
-}
-
-CATEGORICAL_COLS = list(VALID_VALUES.keys())
-NUMERIC_COLS = [
-    "land_area_hectares", "affected_families", "compensation_disbursed_pct",
-    "days_since_notification", "legal_disputes_count",
-    "rehabilitation_progress_pct", "stakeholder_responsiveness_score",
-    "historical_district_delay_rate", "planned_duration_days", "project_age_days",
-]
-
-# ---------------------------------------------------------------------------
-# Pydantic models
-# ---------------------------------------------------------------------------
-class ProjectInput(BaseModel):
-    """Input data for a single land-acquisition project."""
-    state: str = Field(..., description="State where the project is located")
-    district: str = Field(..., description="District of the project")
-    project_type: str = Field(..., description="Type of infrastructure project")
-    land_area_hectares: float = Field(..., ge=0)
-    affected_families: int = Field(..., ge=0)
-    compensation_status: str
-    compensation_disbursed_pct: float = Field(..., ge=0, le=100)
-    approval_stage: str
-    days_since_notification: int = Field(..., ge=0)
-    legal_disputes_count: int = Field(..., ge=0)
-    legal_dispute_status: Optional[str] = None
-    possession_status: str
-    rehabilitation_progress_pct: float = Field(..., ge=0, le=100)
-    stakeholder_responsiveness_score: float = Field(..., ge=0, le=10)
-    historical_district_delay_rate: float = Field(..., ge=0, le=1)
-    inter_department_coordination_issues: str
-    planned_duration_days: int = Field(..., ge=1)
-    project_age_days: int = Field(..., ge=0)
-
-    model_config = {
-        "json_schema_extra": {
-            "examples": [{
-                "state": "Maharashtra", "district": "Pune",
-                "project_type": "National Highway", "land_area_hectares": 50.0,
-                "affected_families": 100, "compensation_status": "Partially Disbursed",
-                "compensation_disbursed_pct": 30.0, "approval_stage": "SIA Completed",
-                "days_since_notification": 500, "legal_disputes_count": 2,
-                "legal_dispute_status": "Ongoing - High Court",
-                "possession_status": "Partially Complete",
-                "rehabilitation_progress_pct": 40.0,
-                "stakeholder_responsiveness_score": 7.5,
-                "historical_district_delay_rate": 0.35,
-                "inter_department_coordination_issues": "Medium",
-                "planned_duration_days": 730, "project_age_days": 900,
-            }]
-        }
-    }
-
-
-class PredictionResponse(BaseModel):
-    risk_category: str
-    delay_probability: float
-    risk_probabilities: dict
-    model_feature_importances: list[dict] = []
-
-
-class AssessmentCreate(BaseModel):
-    project_name: str = Field(..., min_length=1, max_length=180)
-    project: ProjectInput
-
-
-class LoginRequest(BaseModel):
-    account_id: str = Field(..., min_length=1)
-
-
-class OutcomeUpdate(BaseModel):
-    actual_delay_days: int = Field(..., ge=0)
-    actual_completed_at: Optional[str] = None
-
-
-class RecommendRequest(BaseModel):
-    """Project input data + predicted risk label for generating AI recommendations."""
-    project: ProjectInput
-    risk_category: str = Field(..., description="Predicted risk category: Low, Medium, or High")
-    delay_probability: float = Field(..., description="Predicted delay probability (0-1)")
-
-
-class RecommendResponse(BaseModel):
-    risk_category: str
-    recommendations: list[str]
-
-
-# ---------------------------------------------------------------------------
-# Groq client
-# ---------------------------------------------------------------------------
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-groq_client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
-
-DEMO_ACCOUNTS = {
-    "state-admin": {"id": "state-admin", "name": "Aditi Menon", "role": "State Administrator", "permissions": ["assess", "view_audit", "record_outcome"]},
-    "district-officer": {"id": "district-officer", "name": "Rohan Kulkarni", "role": "District Officer", "permissions": ["assess", "record_outcome"]},
-    "reviewer": {"id": "reviewer", "name": "Neha Iyer", "role": "Registry Reviewer", "permissions": ["assess"]},
-}
-SESSION_TOKENS = {}
-
-
-def authenticate(authorization: Optional[str], permission: Optional[str] = None):
-    token = (authorization or "").removeprefix("Bearer ").strip()
-    user = SESSION_TOKENS.get(token)
-    if not user:
-        raise HTTPException(401, "Login required.")
-    if permission and permission not in user["permissions"]:
-        raise HTTPException(403, "This demo account does not have that permission.")
-    return user
-
-
-def write_audit(user: dict, action: str, resource_type: str, resource_id: Optional[str] = None):
-    with sqlite3.connect(DB_PATH) as connection:
-        connection.execute("INSERT INTO audit_log (actor_id, actor_name, actor_role, action, resource_type, resource_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)", (user["id"], user["name"], user["role"], action, resource_type, resource_id, datetime.now(timezone.utc).isoformat()))
-        connection.commit()
-
-
-def build_recommendation_prompt(project: ProjectInput, risk_category: str, delay_probability: float) -> str:
-    """Build a structured prompt for the LLM."""
-    return f"""You are an expert consultant in land acquisition, infrastructure project management, and conflict resolution in India.
-
-A land acquisition project has been assessed by an AI system and classified as **{risk_category} Risk** with a delay probability of **{delay_probability * 100:.1f}%**.
-
-Here are the project details:
-- State: {project.state}, District: {project.district}
-- Project Type: {project.project_type}
-- Land Area: {project.land_area_hectares} hectares, Affected Families: {project.affected_families}
-- Compensation Status: {project.compensation_status} ({project.compensation_disbursed_pct:.1f}% disbursed)
-- Approval Stage: {project.approval_stage}
-- Days Since Notification: {project.days_since_notification}
-- Legal Disputes: {project.legal_disputes_count} ({project.legal_dispute_status or 'None'})
-- Possession Status: {project.possession_status}
-- Rehabilitation Progress: {project.rehabilitation_progress_pct:.1f}%
-- Stakeholder Responsiveness Score: {project.stakeholder_responsiveness_score}/10
-- Historical District Delay Rate: {project.historical_district_delay_rate * 100:.1f}%
-- Inter-Department Coordination Issues: {project.inter_department_coordination_issues}
-- Planned Duration: {project.planned_duration_days} days, Project Age: {project.project_age_days} days
-
-Based on the **{risk_category} Risk** classification and the specific project parameters above, provide exactly 5 concise, actionable recommendations to reduce the land acquisition dispute and delay risk. 
-
-Format your response as a numbered list (1. 2. 3. 4. 5.). Each recommendation should be specific to this project's data, not generic advice. Keep each point to 1-2 sentences."""
-
-
-# ---------------------------------------------------------------------------
-# Explainability helpers
-# ---------------------------------------------------------------------------
-FEATURE_LABELS = {
-    "land_area_hectares": "Land area",
-    "affected_families": "Affected families",
-    "compensation_disbursed_pct": "Compensation disbursed",
-    "days_since_notification": "Notification age",
-    "legal_disputes_count": "Legal dispute count",
-    "rehabilitation_progress_pct": "Rehabilitation progress",
-    "stakeholder_responsiveness_score": "Stakeholder responsiveness",
-    "historical_district_delay_rate": "Historical district delay rate",
-    "planned_duration_days": "Planned duration",
-    "project_age_days": "Project age",
-    "state": "State",
-    "district": "District",
-    "project_type": "Project type",
-    "compensation_status": "Compensation status",
-    "approval_stage": "Approval stage",
-    "legal_dispute_status": "Legal dispute status",
-    "possession_status": "Possession status",
-    "inter_department_coordination_issues": "Inter-department coordination",
-}
-
-
-def model_feature_importances() -> list[dict]:
-    """Return global, model-derived feature importance grouped by source field.
-
-    This is intentionally labeled as feature importance rather than local SHAP
-    contribution: the shipped pipeline contains feature_importances_ but does
-    not ship a SHAP explainer artifact.
-    """
-    try:
-        prep = risk_classifier.named_steps["prep"]
-        model = risk_classifier.named_steps["model"]
-        names = prep.get_feature_names_out()
-        scores = model.feature_importances_
-        grouped = {column: 0.0 for column in NUMERIC_COLS + CATEGORICAL_COLS}
-        for name, score in zip(names, scores):
-            transformed = str(name).split("__", 1)[-1]
-            for column in grouped:
-                if transformed == column or transformed.startswith(f"{column}_"):
-                    grouped[column] += float(score)
-                    break
-        ranked = sorted(grouped.items(), key=lambda item: item[1], reverse=True)
-        total = sum(value for _, value in ranked) or 1.0
-        return [{"feature": FEATURE_LABELS.get(name, name.replace("_", " ").title()), "importance": round(value / total, 4)} for name, value in ranked[:5] if value > 0]
-    except Exception:
-        return []
-
-
-# ---------------------------------------------------------------------------
-# Endpoints
-# ---------------------------------------------------------------------------
 @app.get("/health")
-async def health():
-    return {"status": "healthy", "models_loaded": MODELS_LOADED, "ai_recommendations": groq_client is not None}
+async def health() -> dict[str, Any]:
+    """Report service readiness without exposing secrets or model internals."""
+    return {"status": "healthy", "models_loaded": model_service.loaded, "ai_recommendations": recommendation_service.enabled}
 
 
 @app.get("/api/accounts")
-async def accounts():
-    return [{key: value for key, value in account.items() if key != "permissions"} | {"permissions": account["permissions"]} for account in DEMO_ACCOUNTS.values()]
+async def accounts() -> list[dict[str, Any]]:
+    """List safe demo-account metadata for the account switcher."""
+    return public_accounts()
 
 
 @app.post("/api/login")
-async def login(request: LoginRequest):
-    user = DEMO_ACCOUNTS.get(request.account_id)
-    if not user:
-        raise HTTPException(401, "Unknown demo account.")
-    token = secrets.token_urlsafe(24)
-    SESSION_TOKENS[token] = user
+async def login(request: LoginRequest) -> dict[str, Any]:
+    """Issue a temporary bearer token for one of the supported demo accounts."""
+    token, user = issue_session(request.account_id)
     return {"token": token, "user": user}
 
 
 @app.get("/api/features")
-async def get_features():
-    """Returns input feature metadata for building clients/forms."""
-    features = []
-    for col in NUMERIC_COLS:
-        features.append({"name": col, "type": "numeric"})
-    for col in CATEGORICAL_COLS:
-        features.append({"name": col, "type": "categorical", "options": VALID_VALUES[col]})
-    return {"features": features}
+async def get_features() -> dict[str, list[dict[str, Any]]]:
+    """Return the model field contract used by dynamic browser forms."""
+    numeric_features = [{"name": column, "type": "numeric"} for column in NUMERIC_COLS]
+    categorical_features = [{"name": column, "type": "categorical", "options": VALID_VALUES[column]} for column in CATEGORICAL_COLS]
+    return {"features": numeric_features + categorical_features}
 
 
 @app.post("/api/predict", response_model=PredictionResponse)
-async def predict(project: ProjectInput):
-    """Predict risk category and delay probability for a project."""
-    if not MODELS_LOADED:
-        raise HTTPException(503, "Models not loaded.")
-
-    data = {col: [getattr(project, col)] for col in NUMERIC_COLS + CATEGORICAL_COLS}
-    if data["legal_dispute_status"][0] is None:
-        data["legal_dispute_status"] = ["None"]
-
-    df = pd.DataFrame(data)
-
+async def predict(project: ProjectInput) -> PredictionResponse:
+    """Run the real model service and translate service failures into HTTP errors."""
     try:
-        risk_enc = risk_classifier.predict(df)[0]
-        risk_proba = risk_classifier.predict_proba(df)[0]
-        risk_label = label_encoder.inverse_transform([risk_enc])[0]
-        probs = {c: round(float(p), 4) for c, p in zip(label_encoder.classes_, risk_proba)}
-
-        delay = float(delay_regressor.predict(df)[0])
-        delay = max(0.0, min(1.0, delay))
-
-        return PredictionResponse(
-            risk_category=risk_label,
-            delay_probability=round(delay, 4),
-            risk_probabilities=probs,
-            model_feature_importances=model_feature_importances(),
-        )
-    except Exception as e:
-        raise HTTPException(500, f"Prediction failed: {e}")
+        return PredictionResponse(**model_service.predict(project))
+    except RuntimeError as error:
+        raise HTTPException(503, str(error)) from error
+    except Exception as error:
+        raise HTTPException(500, f"Prediction failed: {error}") from error
 
 
 @app.get("/api/assessments")
-async def list_assessments(limit: int = 50, authorization: Optional[str] = Header(default=None)):
-    user = authenticate(authorization, "assess")
-    safe_limit = max(1, min(limit, 200))
-    with sqlite3.connect(DB_PATH) as connection:
-        connection.row_factory = sqlite3.Row
-        rows = connection.execute("SELECT id, project_name, payload_json, prediction_json, created_at, created_by, actual_delay_days, actual_completed_at FROM assessments ORDER BY id DESC LIMIT ?", (safe_limit,)).fetchall()
-    return [{"id": row["id"], "project_name": row["project_name"], "project": json.loads(row["payload_json"]), **json.loads(row["prediction_json"]), "created_at": row["created_at"], "created_by": row["created_by"], "actual_delay_days": row["actual_delay_days"], "actual_completed_at": row["actual_completed_at"]} for row in rows]
+async def list_assessments(limit: int = 50, authorization: str | None = Header(default=None)) -> list[dict[str, Any]]:
+    """List recent persisted assessments for an authorized user."""
+    authenticate(authorization, "assess")
+    return fetch_assessments(settings.database_path, limit)
 
 
 @app.post("/api/assessments")
-async def create_assessment(request: AssessmentCreate, authorization: Optional[str] = Header(default=None)):
+async def create_assessment(request: AssessmentCreate, authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    """Predict, persist, audit, and return one assessment as one transaction flow."""
     user = authenticate(authorization, "assess")
     prediction = await predict(request.project)
     created_at = datetime.now(timezone.utc).isoformat()
-    with sqlite3.connect(DB_PATH) as connection:
-        cursor = connection.execute("INSERT INTO assessments (project_name, payload_json, prediction_json, created_at, created_by) VALUES (?, ?, ?, ?, ?)", (request.project_name, request.project.model_dump_json(), prediction.model_dump_json(), created_at, user["id"]))
-        connection.commit()
-        assessment_id = cursor.lastrowid
-    write_audit(user, "assessment.created", "assessment", str(assessment_id))
+    assessment_id = insert_assessment(settings.database_path, request.project_name, request.project.model_dump(), prediction.model_dump(), user["id"], created_at)
+    insert_audit_event(settings.database_path, user, "assessment.created", "assessment", str(assessment_id))
     return {"id": assessment_id, "project_name": request.project_name, "project": request.project.model_dump(), **prediction.model_dump(), "created_at": created_at, "created_by": user["id"]}
 
 
 @app.patch("/api/assessments/{assessment_id}/outcome")
-async def record_outcome(assessment_id: int, outcome: OutcomeUpdate, authorization: Optional[str] = Header(default=None)):
+async def record_outcome(assessment_id: int, outcome: OutcomeUpdate, authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    """Store an observed delay and feed it into the monitoring loop."""
     user = authenticate(authorization, "record_outcome")
     completed_at = outcome.actual_completed_at or datetime.now(timezone.utc).isoformat()
-    with sqlite3.connect(DB_PATH) as connection:
-        cursor = connection.execute("UPDATE assessments SET actual_delay_days = ?, actual_completed_at = ? WHERE id = ?", (outcome.actual_delay_days, completed_at, assessment_id))
-        if cursor.rowcount == 0:
-            raise HTTPException(404, "Assessment not found.")
-        connection.commit()
-    write_audit(user, "assessment.outcome_recorded", "assessment", str(assessment_id))
+    if not update_assessment_outcome(settings.database_path, assessment_id, outcome.actual_delay_days, completed_at):
+        raise HTTPException(404, "Assessment not found.")
+    insert_audit_event(settings.database_path, user, "assessment.outcome_recorded", "assessment", str(assessment_id))
     return {"id": assessment_id, "actual_delay_days": outcome.actual_delay_days, "actual_completed_at": completed_at}
 
 
 @app.get("/api/monitoring/accuracy")
-async def monitoring_accuracy(authorization: Optional[str] = Header(default=None)):
+async def monitoring_accuracy(authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    """Return feedback-loop accuracy metrics for authorized assessors."""
     authenticate(authorization, "assess")
-    with sqlite3.connect(DB_PATH) as connection:
-        connection.row_factory = sqlite3.Row
-        rows = connection.execute("SELECT id, project_name, prediction_json, payload_json, actual_delay_days, actual_completed_at FROM assessments WHERE actual_delay_days IS NOT NULL ORDER BY id DESC").fetchall()
-    cases = []
-    for row in rows:
-        prediction = json.loads(row["prediction_json"])
-        payload = json.loads(row["payload_json"])
-        planned_days = max(1, int(payload.get("planned_duration_days") or 1))
-        predicted_days = round(planned_days * float(prediction.get("delay_probability") or 0))
-        actual_days = int(row["actual_delay_days"])
-        cases.append({"id": row["id"], "project_name": row["project_name"], "predicted_delay_days": predicted_days, "actual_delay_days": actual_days, "absolute_error_days": abs(predicted_days - actual_days), "actual_completed_at": row["actual_completed_at"]})
-    mae = round(sum(case["absolute_error_days"] for case in cases) / len(cases), 1) if cases else None
-    within_30 = round(sum(case["absolute_error_days"] <= 30 for case in cases) / len(cases) * 100) if cases else None
-    return {"resolved_cases": len(cases), "mean_absolute_error_days": mae, "within_30_days_percent": within_30, "cases": cases}
+    return calculate_accuracy(settings.database_path)
 
 
 @app.get("/api/audit-log")
-async def audit_log(limit: int = 50, authorization: Optional[str] = Header(default=None)):
-    user = authenticate(authorization, "view_audit")
-    safe_limit = max(1, min(limit, 200))
-    with sqlite3.connect(DB_PATH) as connection:
-        connection.row_factory = sqlite3.Row
-        rows = connection.execute("SELECT id, actor_id, actor_name, actor_role, action, resource_type, resource_id, created_at FROM audit_log ORDER BY id DESC LIMIT ?", (safe_limit,)).fetchall()
-    return [dict(row) for row in rows]
+async def audit_log(limit: int = 50, authorization: str | None = Header(default=None)) -> list[dict[str, Any]]:
+    """Return recent audit entries for administrators with audit permission."""
+    authenticate(authorization, "view_audit")
+    return list_audit_events(settings.database_path, limit)
 
 
 @app.post("/api/recommend", response_model=RecommendResponse)
-async def recommend(req: RecommendRequest):
-    """Generate AI-powered recommendations to reduce land dispute risk."""
-    if not groq_client:
-        raise HTTPException(503, "Groq API key not configured. Set GROQ_API_KEY in your .env file.")
-
-    prompt = build_recommendation_prompt(req.project, req.risk_category, req.delay_probability)
-
+async def recommend(request: RecommendRequest) -> RecommendResponse:
+    """Generate optional AI recommendations with explicit provider failures."""
     try:
-        chat = groq_client.chat.completions.create(
-            model="openai/gpt-oss-120b",
-            messages=[
-                {"role": "system", "content": "You are a land acquisition and conflict resolution expert for Indian infrastructure projects."},
-                {"role": "user", "content": prompt},
-            ],
-            temperature=0.4,
-            max_tokens=600,
-        )
-        raw = chat.choices[0].message.content.strip()
-
-        # Parse numbered list into individual recommendations
-        lines = [line.strip() for line in raw.split("\n") if line.strip()]
-        recommendations = [
-            line.lstrip("0123456789.-) ").strip()
-            for line in lines
-            if line and line[0].isdigit()
-        ]
-        if not recommendations:
-            recommendations = [raw]  # fallback: return raw text as single item
-
-        return RecommendResponse(
-            risk_category=req.risk_category,
-            recommendations=recommendations,
-        )
-    except Exception as e:
-        raise HTTPException(500, f"AI recommendation failed: {e}")
+        recommendations = recommendation_service.generate(request.project, request.risk_category, request.delay_probability)
+        return RecommendResponse(risk_category=request.risk_category, recommendations=recommendations)
+    except RuntimeError as error:
+        raise HTTPException(503, str(error)) from error
+    except Exception as error:
+        raise HTTPException(500, f"AI recommendation failed: {error}") from error
