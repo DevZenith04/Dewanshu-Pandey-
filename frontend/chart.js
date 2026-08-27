@@ -4,15 +4,15 @@
   function palette(theme) {
     const dark = theme === 'dark';
     return {
-      ink: dark ? '#F5F6FA' : '#173344',
-      muted: dark ? '#B0B2C8' : '#6D7C83',
-      grid: dark ? 'rgba(255,255,255,.14)' : 'rgba(23,51,68,.1)',
-      coral: dark ? '#7C5CFC' : '#BD685A',
-      teal: dark ? '#38E1FF' : '#477E78',
-      ochre: dark ? '#7C5CFC' : '#CA8B45',
-      green: dark ? '#38E1FF' : '#73AD88',
-      surface: dark ? 'rgba(17,18,32,.72)' : 'rgba(255,255,255,.74)',
-      area: dark ? 'rgba(124,92,252,.18)' : 'rgba(189,104,90,.15)',
+      ink: dark ? '#F5F1E6' : '#1E2430',
+      muted: dark ? '#B9B3A2' : '#8C8878',
+      grid: dark ? 'rgba(255,255,255,.12)' : 'rgba(30,36,48,.1)',
+      coral: dark ? '#E2703F' : '#D85A30',
+      teal: dark ? '#5DCAA5' : '#2F7A5C',
+      ochre: dark ? '#E8B455' : '#B07A1E',
+      green: dark ? '#79C9A8' : '#5DCAA5',
+      surface: dark ? 'rgba(30,27,20,.72)' : 'rgba(255,255,255,.62)',
+      area: dark ? 'rgba(226,112,63,.20)' : 'rgba(216,90,48,.15)',
     };
   }
 
@@ -44,7 +44,7 @@
     if (typeof Chart === 'undefined') return;
     destroyCharts();
     const p = palette(theme);
-    Chart.defaults.font.family = 'Inter, sans-serif';
+    Chart.defaults.font.family = 'Barlow Condensed, sans-serif';
     Chart.defaults.color = p.muted;
 
     const riskCounts = ['Low', 'Medium', 'High', 'Critical'].map((label) => projects.filter((project) => {
