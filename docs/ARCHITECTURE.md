@@ -10,6 +10,7 @@ Zameen Vivaad AI is a small, deployable product composed of a framework-free bro
 | Browser API client | `frontend/api.js` | Backend URL selection, valid category normalization, payload defaults, prediction calls, persistence calls, feature loading, and fallback estimates. |
 | Runtime config | `frontend/config.js` | Local or deployed FastAPI base URL. Browser `localStorage` can override it with `zv_api_base_url`. |
 | Charts | `frontend/chart.js` | Chart.js lifecycle, theme-aware colors, and analytics visualizations. |
+| Extended workspace views | `frontend/extended-views.js` | Uploaded-screen-derived Analytics, Geo intelligence, Alerts, and Admin & access renderers mounted inside the live SPA. |
 | FastAPI composition root | `backend/app.py` | CORS wiring, dependency composition, and backward-compatible HTTP route orchestration. |
 | Runtime configuration | `backend/core/config.py` | Typed environment-backed settings for paths, CORS, and optional recommendation-provider limits. |
 | Domain contract | `backend/core/domain.py` | Valid categories, model field order, feature labels, and Pydantic request/response schemas. |
