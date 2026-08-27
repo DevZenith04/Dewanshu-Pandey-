@@ -6,7 +6,7 @@ This repository is the current **vanilla HTML/CSS/JavaScript frontend plus FastA
 
 The Home splash runs for exactly **five seconds** when the page first loads or when the user explicitly activates Overview/Home. It does not run on Project desk, Risk studio, Parcel registry, or Archive navigation. A short opening cue appears at 120ms so the screen is not blank: the field-intelligence kicker and faint contour field establish the scene before the wordmark arrives at two seconds. The tagline follows shortly afterward, the complete lockup remains readable for the remaining three seconds, and the final contour fade overlaps the dashboard reveal. Reduced-motion users skip the animation and receive the settled dashboard immediately.
 
-The current scheduler introduces the wordmark at 2 seconds, the tagline at 2.45 seconds, begins the dashboard reveal at 4.95 seconds, exactly 0.05 seconds before the splash completes, and removes the overlay at exactly 5 seconds. The name therefore remains visible from the two-second mark through the end of the five-second intro.
+The current scheduler introduces the wordmark at 2 seconds, the tagline at 2.45 seconds, begins the dashboard reveal at 4.3 seconds, and removes the overlay at exactly 5 seconds. This leaves a 700ms runway for the 450ms overlay fade and 550ms dashboard transition to finish naturally, eliminating the previous 50ms cut-off window. The name remains visible from the two-second mark through the end of the five-second intro.
 
 ## Theme direction
 

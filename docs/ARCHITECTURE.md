@@ -23,7 +23,7 @@ If the persistence endpoint is unavailable, the browser tries the prediction end
 
 ## Startup experience
 
-The Home splash runs for exactly five seconds on initial page load and each explicit Overview/Home activation. It is not replayed by other internal views. The current choreography holds the parchment opening, shows the opening cue immediately, traces the survey line, introduces the wordmark at two seconds, fades in the tagline shortly afterward, keeps the lockup visible through the final three seconds, begins the dashboard reveal at 4.95 seconds, and removes the overlay at 5 seconds. Users who prefer reduced motion skip directly to the settled dashboard.
+The Home splash runs for exactly five seconds on initial page load and each explicit Overview/Home activation. It is not replayed by other internal views. The current choreography holds the parchment opening, shows the opening cue immediately, traces the survey line, introduces the wordmark at two seconds, fades in the tagline shortly afterward, begins the dashboard reveal at 4.3 seconds, allows the 450ms overlay fade and 550ms dashboard transition to complete, and removes the overlay at 5 seconds. Users who prefer reduced motion skip directly to the settled dashboard.
 
 ## Deployment boundary
 

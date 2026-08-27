@@ -194,7 +194,7 @@ function showIntro({ force = false } = {}) {
     line: 520,
     wordmark: 2000,
     tagline: 2450,
-    reveal: 4950,
+    reveal: 4300,
     finish: 5000,
   };
   const finish = () => {

@@ -2,7 +2,7 @@
 
 The launch experience is not an MP4 video. It is a lightweight **HTML + inline SVG + CSS transition + JavaScript timing sequence**. This keeps the intro sharp at every screen size, avoids a large media asset, and allows it to respect `prefers-reduced-motion`.
 
-The shipped sequence lasts **5 seconds**. The lockup appears at approximately **2 seconds**, the tagline appears at approximately **2.45 seconds**, the dashboard starts revealing at **4.95 seconds**, and the splash is removed at **5 seconds**.
+The shipped sequence lasts **5 seconds**. The lockup appears at approximately **2 seconds**, the tagline appears at approximately **2.45 seconds**, the dashboard starts revealing at approximately **4.3 seconds**, and the splash is removed at **5 seconds**. This gives the 450ms overlay fade and 550ms dashboard reveal enough time to finish before removal.
 
 ## 1. HTML markup
 
@@ -382,7 +382,7 @@ function showIntro({ force = false } = {}) {
     line: 520,
     wordmark: 2000,
     tagline: 2450,
-    reveal: 4950,
+    reveal: 4300,
     finish: 5000,
   };
 
@@ -477,7 +477,7 @@ app
 | `520ms` | `intro-line` | The 1px boundary line begins its 1.2-second left-to-right draw. |
 | `2000ms` | `intro-wordmark` | The kicker and `Zameen Vivaad AI` rise 12px into place. |
 | `2450ms` | `intro-tagline` | The tagline fades/slides into place. |
-| `4950ms` | `intro-fadeout` | The dashboard reveals while the contour pattern fades toward near-invisible. |
+| `4300ms` | `intro-fadeout` | The dashboard reveals while the contour pattern fades toward near-invisible, leaving a 700ms completion runway. |
 | `5000ms` | Finished | The overlay is removed and normal dashboard interaction is restored. |
 
 ## 7. Reset and testing commands
@@ -502,3 +502,10 @@ To test the reduced-motion behavior in Chromium, open DevTools, use the Renderin
 The session key is `zv_intro_seen`. The first normal launch sets this key to `1`, so subsequent internal navigation does not replay the intro. The Home navigation intentionally uses `force: true`, so returning to the Overview screen replays the five-second sequence as requested.
 
 The intro has no network dependency, no video download, and no API dependency. It is safe to run while the FastAPI service is still checking connectivity in the background.
+
+
+## 9. Timing correction verification
+
+The end-of-sequence timing was corrected in `frontend/app.js` from `reveal: 4950` to `reveal: 4300`. The splash still finishes at `5000ms`, creating a `700ms` runway. Static assertions confirmed the 450ms overlay transition and 550ms dashboard transition both fit inside that window, and the stale 4.95-second references were removed from the documentation.
+
+A local browser replay was triggered after clearing `sessionStorage['zv_intro_seen']`. The page returned to the normal dashboard state with the warm archive palette, field-intelligence sidebar, charts, and controls intact. The reduced-motion branch remains immediate and does not schedule the animation timers.
